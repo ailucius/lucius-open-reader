@@ -1,0 +1,1625 @@
+{
+  "source": "https://www.etenders.gov.za/home/Download?blobName=894a6bb9-d68b-4ffb-a667-b6665cbea8ef.pdf&downloadedFileName=TENDER%20DOCUMENT%20-%20SUPPLY%20AND%20DELIVERY%20OF%20WATER%20PUMPS%208-2-1-656.pdf",
+  "pdf_url": "https://www.etenders.gov.za/home/Download?blobName=894a6bb9-d68b-4ffb-a667-b6665cbea8ef.pdf&downloadedFileName=TENDER%20DOCUMENT%20-%20SUPPLY%20AND%20DELIVERY%20OF%20WATER%20PUMPS%208-2-1-656.pdf",
+  "profile": "Pump supplier based in Johannesburg, South Africa. We supply and service submersible and centrifugal water and sewage pumps, spares and instrumentation to municipalities. CSD registered, B-BBEE level 2, 12 staff, 8 years in business.",
+  "reader_model": "nvidia/nemotron-3-super-120b-a12b",
+  "decider_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "fake_llm": false,
+  "stats": {
+    "pages_total": 44,
+    "pages_read": 44,
+    "chunks_total": 8,
+    "chunks_failed": [],
+    "malformed_items": 0,
+    "duplicates_merged": 0,
+    "requirements": 78,
+    "verified": 77,
+    "unverified": 1,
+    "pages_corrected": 1,
+    "joined_quotes": 0,
+    "empty_pages": 2,
+    "empty_page_numbers": [
+      43,
+      44
+    ],
+    "thinking_retries": 0
+  },
+  "requirements": [
+    {
+      "id": "R1",
+      "requirement": "Bid response documents may be deposited in the bid box situated at the corner of High Street and Mark Street.",
+      "quote": "BID RESPONSE DOCUMENTS MAY BE DEPOSITED IN THE BID BOX SITUATED AT CORNER OF HIGH STREET AND MARK STREET",
+      "page": 2,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R2",
+      "requirement": "Bidders must deliver bids by the stipulated time to the correct address; late bids will not be accepted.",
+      "quote": "BIDS MUST BE DELIVERED BY THE STIPULATED TIME TO THE CORRECT ADDRESS. LATE BIDS WILL NOT BE ACCEPTED FOR CONSIDERATION.",
+      "page": 3,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R3",
+      "requirement": "All bids must be submitted on the official forms provided (not to be re‑typed) or online.",
+      "quote": "ALL BIDS MUST BE SUBMITTED ON THE OFFICIAL FORMS PROVIDED (NOT TO BE RE‑TYPED) OR ONLINE",
+      "page": 3,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R4",
+      "requirement": "Bidders must ensure compliance with their tax obligations.",
+      "quote": "BIDDERS MUST ENSURE COMPLIANCE WITH THEIR TAX OBLIGATIONS.",
+      "page": 3,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R5",
+      "requirement": "Bidders are required to submit their unique Personal Identification Number (PIN) issued by SARS to enable the organ of state to view the taxpayer’s profile and tax status.",
+      "quote": "BIDDERS ARE REQUIRED TO SUBMIT THEIR UNIQUE PERSONAL IDENTIFICATION NUMBER (PIN) ISSUED BY SARS TO ENABLE THE ORGAN OF STATE TO VIEW THE TAXPAYER’S PROFILE AND TAX STATUS.",
+      "page": 3,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R6",
+      "requirement": "Foreign suppliers must complete the pre‑award questionnaire in Part B:3.",
+      "quote": "FOREIGN SUPPLIERS MUST COMPLETE THE PRE-AWARD QUESTIONNAIRE IN PART B:3.",
+      "page": 3,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R7",
+      "requirement": "Where no TCS is available but the bidder is registered on the Central Supplier Database (CSD), a CSD number must be provided.",
+      "quote": "WHERE NO TCS IS AVAILABLE BUT THE BIDDER IS REGISTERED ON THE CENTRAL SUPPLIER DATABASE (CSD), A CSD NUMBER MUST BE PROVIDED.",
+      "page": 3,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R8",
+      "requirement": "Bidders must fill in all Municipal Bidding Documents (MBDs); failure to do so will automatically disqualify.",
+      "quote": "Fill in all the Municipal Bidding Documents (MBD’S) failure to do so will automatically disqualify.",
+      "page": 4,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R9",
+      "requirement": "The tender will be valid for 90 days after the closing date.",
+      "quote": "These Tender will be valid for a period of 90 days after the closing date",
+      "page": 4,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R10",
+      "requirement": "Tender documents must be completed in accordance with the conditions and bid rules contained in the tender document and supporting documents must be placed in a sealed envelope and clearly marked \"SUPPLY AND DELIVERY OF SEWERAGE WATER PUMPS SPARES & INSTRUMENTS STOCK ITEMS, over 36 months. Tender NO: 8/2/1/656\".",
+      "quote": "Tender are to be completed in accordance with the conditions and bid rules contain in the Tender document and supporting documents must be placed in a sealed envelope and clearly marked “SUPPLY AND DELIVERY OF SEWERAGE WATER PUMPS SPARES & INSTRUMENTS STOCK ITEMS, over 36 months. Tender NO: 8/2/1/656”",
+      "page": 4,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R11",
+      "requirement": "No awards will be made to a person who is not registered on the Central Supplier Database.",
+      "quote": "No awards will be made to a person, who is not registered on the Central Supplier Data base",
+      "page": 4,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R12",
+      "requirement": "No awards will be made to a person who is in the service of the state.",
+      "quote": "No awards will be made to a person, who is in the service of the state",
+      "page": 4,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R13",
+      "requirement": "No awards will be made to a person who is an advisor or consultant contracted with the Municipality or municipal entity.",
+      "quote": "No awards will be made to a person, who is an advisor or consultant contracted with the Municipality or municipal entity",
+      "page": 4,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R14",
+      "requirement": "Proof of payment of the bid fee must be attached to the bid.",
+      "quote": "Proof of payment must be attached.",
+      "page": 5,
+      "category": "commercial",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": 4,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R15",
+      "requirement": "Central Supplier Database registration report (detailed) must be attached to claim specific goals.",
+      "quote": "Central Supplier Data base registration report (Detailed)to claim special goals",
+      "page": 5,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R16",
+      "requirement": "Valid copy of company registration document must be attached.",
+      "quote": "Valid copy of company registration document",
+      "page": 5,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R17",
+      "requirement": "SARS PIN or Tax Clearance certificate must be submitted.",
+      "quote": "SARS PIN or Tax Clearance certificate must be submitted",
+      "page": 5,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R18",
+      "requirement": "Certified B‑BBEE certificate from a registered accountant or original sworn affidavit from a Commissioner of Oath is required.",
+      "quote": "Certified B- BBEE Certificate from registered accountant is required or original Sworn Affidavit from Commissioner of Oath.",
+      "page": 5,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R19",
+      "requirement": "A certified current account in terms of water and electricity / rates and taxes obtainable from the local municipality / Induna/Inkosi / Councillor, not older than three months or a lease agreement, must be submitted.",
+      "quote": "A Certified current account in terms of water and electricity / rates and taxes obtainable from your local municipality / Induna/Inkosi / Councillor, must be submitted not older than three months or lease agreement",
+      "page": 5,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R20",
+      "requirement": "Certified copies of identity documents of directors and owners of the company must be submitted.",
+      "quote": "Certified copies of identity documents of directors and owners of the company must be submitted",
+      "page": 5,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R21",
+      "requirement": "SABS Approval Certificate must be submitted.",
+      "quote": "SABS Approval CERTIFICATE",
+      "page": 5,
+      "category": "technical",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R22",
+      "requirement": "Proof of bank rating (A, B, C) must be submitted.",
+      "quote": "Proof of bank rating (A, B, C)",
+      "page": 5,
+      "category": "commercial",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R23",
+      "requirement": "Reference letters or purchase orders of any supply and delivery as proof of company experience must be submitted.",
+      "quote": "Reference letters or purchased orders of any supply and delivery as a proof of company experience.",
+      "page": 5,
+      "category": "technical",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 1-6"
+    },
+    {
+      "id": "R24",
+      "requirement": "Bidders must submit an original, valid Tax Clearance Certificate (TCC) issued by SARS, valid for one year from date of approval, together with the bid.",
+      "quote": "The original Tax Clearance Certificate must be submitted together with the bid. Failure to submit the original and valid Tax Clearance Certificate will result in the invalidation of the bid.",
+      "page": 8,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R25",
+      "requirement": "Foreign bidders or individuals must also obtain a Tax Clearance Certificate from SARS.",
+      "quote": "The Tax Clearance Certificate Requirements are also applicable to foreign bidders / individuals who wish to submit bids.",
+      "page": 8,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R26",
+      "requirement": "In consortia/joint ventures/sub‑contractors, each party must submit a separate Tax Clearance Certificate.",
+      "quote": "In bids where Consortia / Joint Ventures / Sub-contractors are involved, each party must submit a separate Tax Clearance Certificate.",
+      "page": 8,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R27",
+      "requirement": "Bidders must complete and submit the TCC 001 \"Application for a Tax Clearance Certificate\" form to SARS to obtain the certificate.",
+      "quote": "In order to meet this requirement bidders are required to complete in full the attached form TCC 001 “Application for a Tax Clearance Certificate” and submit it to any SARS branch office nationally.",
+      "page": 8,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R28",
+      "requirement": "Only firm prices will be accepted; non‑firm prices (including those subject to exchange rate variations) will not be considered.",
+      "quote": "NOTE:  ONLY FIRM PRICES WILL BE ACCEPTED. NON-FIRM PRICES (INCLUDING PRICES SUBJECT TO RATES OF EXCHANGE VARIATIONS) WILL NOT BE CONSIDERED",
+      "page": 9,
+      "category": "commercial",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R29",
+      "requirement": "The bid price must be valid for 90 days from the closing date of the tender.",
+      "quote": "OFFER TO BE VALID FOR 90 DAYS FROM THE CLOSING DATE OF THE TENDER.",
+      "page": 9,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R30",
+      "requirement": "Bidders must provide brand and model, country of origin, confirmation of compliance with specifications, any deviations, delivery period, delivery basis, and ensure all delivery costs are included in the bid price.",
+      "quote": "- Brand and Model:…………………………………. - Country of Origin: ………………………………. - Does the offer comply with the specification(s)? *YES/NO - If not to specification, indicate deviation(s):…………………………………. - Period required for delivery:………………………………. - Delivery: Firm/Not firm - Delivery basis:……………………………………. Note: All delivery costs must be included in the bid price, for delivery at the prescribed destination.",
+      "page": 9,
+      "category": "technical",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R31",
+      "requirement": "Bidders must insert their name, bid number, closing time (12h00) and closing date (19/11/2026) on the pricing schedule.",
+      "quote": "Name of Bidder…………………………. Bid Number: 8/2/1/656 Closing Time: 12h00 Closing Date: 1 9 / 1 1 / 2 0 2 6",
+      "page": 9,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R32",
+      "requirement": "No bid will be accepted from persons in the service of the state.",
+      "quote": "1. No bid will be accepted from persons in the service of the state¹.",
+      "page": 10,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R33",
+      "requirement": "Bidders must complete and submit the Declaration of Interest questionnaire (sections 3.1‑3.14) with the bid.",
+      "quote": "3. In order to give effect to the above, the following questionnaire must be completed and submitted with the bid.",
+      "page": 10,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R34",
+      "requirement": "Bidders must disclose if they or any director/trustee/manager/shareholder/stakeholder is presently in the service of the state, has been in the service of the state in the past twelve months, has relationships with state employees involved in evaluation, or has interests in related companies.",
+      "quote": "3.8 Are you presently in the service of the state? YES/ NO ... 3.9 Have you been in the service of the state for the past twelve months? .......... YES/ NO ... 3.10 Do you have any relationship (family, friend, other) with persons in the service of the state and may be involved with the evaluation and or adjudication of this bid? ... 3.11 Are you, aware of any relationship (family, friend, other) between any other bidder and any persons in the service of the state who may be involved with the evaluation and or adjudication of this bid? ... 3.12 Are any of the company’s directors, trustees, managers, principal shareholders or stakeholders in the service of the state? ... 3.13 Are any spouse, child or parent of the company’s directors’ trustees, managers, principal shareholders or stakeholders in service of the state? ... 3.14 Do you or any of the directors, trustee, managers, principal shareholders, or stakeholders of this company have any interest in any other related companies or business whether or not they are bidding for this contract.",
+      "page": 11,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 0.847,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 7-12"
+    },
+    {
+      "id": "R35",
+      "requirement": "Bidder must complete and include the Preference Points Claim Form (MBD 6.1) as part of the tender.",
+      "quote": "This preference form must form part of all tenders invited.",
+      "page": 13,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 13-18"
+    },
+    {
+      "id": "R36",
+      "requirement": "Bidder must study the General Conditions, Definitions and Directives applicable to the tender and preferential procurement regulations before completing the form.",
+      "quote": "BEFORE COMPLETING THIS FORM, TENDERERS MUST STUDY THE GENERAL CONDITIONS, DEFINITIONS AND DIRECTIVES APPLICABLE IN RESPECT OF THE TENDER AND PREFERENTIAL PROCUREMENT REGULATIONS, 2022",
+      "page": 13,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 13-18"
+    },
+    {
+      "id": "R37",
+      "requirement": "Bidder must indicate the applicable preference point system (80/20 or 90/10) as specified by the organ of state.",
+      "quote": "The applicable preference point system for this tender is the 80/20 preference point system.",
+      "page": 13,
+      "category": "technical",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 13-18"
+    },
+    {
+      "id": "R38",
+      "requirement": "Bidder must submit proof or documentation required to claim points for specific goals with the tender.",
+      "quote": "Failure on the part of a tenderer to submit proof or documentation required in terms of this tender to claim points for specific goals with the tender, will be interpreted to mean that preference points for specific goals are not claimed.",
+      "page": 14,
+      "category": "commercial",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 13-18"
+    },
+    {
+      "id": "R39",
+      "requirement": "Bidder must be prepared to substantiate any preference claim when requested by the organ of state.",
+      "quote": "The organ of state reserves the right to require of a tenderer, either before a tender is adjudicated or at any time subsequently, to substantiate any claim in regard to preferences, in any manner required by the organ of state.",
+      "page": 14,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 13-18"
+    },
+    {
+      "id": "R40",
+      "requirement": "Bidder must complete the declaration section, certifying that information is true and correct and acknowledging consequences of false claims.",
+      "quote": "I, the undersigned, who is duly authorised to do so on behalf of the company/firm, certify that the points claimed, based on the specific goals as advised in the tender, qualifies the company/ firm for the preference(s) shown and I acknowledge that:",
+      "page": 16,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 13-18"
+    },
+    {
+      "id": "R41",
+      "requirement": "Bidder must sign and date the form and provide address details.",
+      "quote": "SIGNATURE(S) OF TENDERER(S) ... DATE: ... ADDRESS:",
+      "page": 17,
+      "category": "submission",
+      "mandatory": true,
+      "verified": false,
+      "match_score": 0.333,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 13-18"
+    },
+    {
+      "id": "R42",
+      "requirement": "Bidder must fill in duplicate the Form of Offer and Acceptance (MBD 7.1) and have both parts signed in original.",
+      "quote": "THIS FORM MUST BE FILLED IN DUPLICATE BY BOTH THE SUCCESSFUL BIDDER (PART 1) AND THE PURCHASER (PART 2). BOTH FORMS MUST BE SIGNED IN THE ORIGINAL",
+      "page": 18,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 13-18"
+    },
+    {
+      "id": "R43",
+      "requirement": "Bidder must state the offered total price inclusive of VAT in words and figures.",
+      "quote": "THE OFFERED TOTAL OF THE PRICES INCLUSIVE OF VALUE ADDED TAX IS: ... RAND (in words); R ................................... (in figures)",
+      "page": 18,
+      "category": "commercial",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 13-18"
+    },
+    {
+      "id": "R44",
+      "requirement": "Submit a Tax Clearance Certificate.",
+      "quote": "- \nTax clearance certificate;",
+      "page": 19,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R45",
+      "requirement": "Provide pricing schedule(s).",
+      "quote": "- \nPricing schedule(s);",
+      "page": 19,
+      "category": "technical",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R46",
+      "requirement": "Include Technical Specification(s).",
+      "quote": "- \nTechnical Specification(s);",
+      "page": 19,
+      "category": "technical",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R47",
+      "requirement": "Make preference claims for Broad-Based Black Economic Empowerment status level contribution per Preferential Procurement Regulations 2011.",
+      "quote": "- \nPreference claims\nfor Broad Based Black Economic Empowerment Status Level of Contribution in terms of the Preferential Procurement Regulations 2011;",
+      "page": 19,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R48",
+      "requirement": "Submit Declaration of interest.",
+      "quote": "- \nDeclaration of interest;",
+      "page": 19,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R49",
+      "requirement": "Submit Declaration of bidder's past SCM practices.",
+      "quote": "- \nDeclaration of bidder’s past SCM practices;",
+      "page": 19,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R50",
+      "requirement": "Provide Certificate of Independent Bid Determination.",
+      "quote": "- \nCertificate of Independent Bid Determination;",
+      "page": 19,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R51",
+      "requirement": "Attach Special Conditions of Contract, General Conditions of Contract, and Other (specify).",
+      "quote": "- \nSpecial Conditions of Contract;\n(ii)\nGeneral Conditions of Contract; and\n(iii)\nOther (specify)",
+      "page": 19,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R52",
+      "requirement": "Confirm satisfaction with correctness and validity of bid, covering all goods/works and obligations, accepting own risk for mistakes.",
+      "quote": "I confirm that I have satisfied myself as to the correctness and validity of my bid; that the price(s) and rate(s) quoted cover all the goods and/or works specified in the bidding documents; that the price(s) and rate(s) cover all my obligations and I accept that any mistakes regarding price(s) and rate(s) and calculations will be at my own risk.",
+      "page": 19,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R53",
+      "requirement": "Accept full responsibility for proper execution and fulfillment of all obligations under the agreement as principal liable.",
+      "quote": "I accept full responsibility for the proper execution and fulfilment of all obligations and conditions devolving on me under this agreement as the principal liable for the due fulfilment of this contract.",
+      "page": 19,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R54",
+      "requirement": "Declare no participation in collusive practices with any bidder or other person regarding this or any other bid.",
+      "quote": "I declare that I have no participation in any collusive practices with any bidder or any other person regarding this or any other bid.",
+      "page": 19,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R55",
+      "requirement": "Confirm you are duly authorised to sign the contract.",
+      "quote": "I confirm that I am duly authorised to sign this contract.",
+      "page": 19,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R56",
+      "requirement": "Sign the Form of Offer and Acceptance on behalf of the tenderer, providing name, signature, capacity, date.",
+      "quote": "SIGNED ON BEHALF OF/BY THE TENDERER:\nNAME\nSIGNATURE\nCAPACITY\nDATE",
+      "page": 19,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R57",
+      "requirement": "Have witness sign with name, signature, date.",
+      "quote": "SIGNED BY WITNESS:\nNAME\nSIGNATURE\nDATE",
+      "page": 19,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R58",
+      "requirement": "Provide name and address of organisation.",
+      "quote": "Name and address of Organisation:\n.....................................................................................................................................................................\n.....................................................................................................................................................................\n.....................................................................................................................................................................",
+      "page": 19,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R59",
+      "requirement": "Within two weeks of receiving a completed Agreement, contact employer's agent to arrange delivery of bonds, guarantees, proof of insurance and any other documentation required by Conditions of Contract.",
+      "quote": "The tenderer shall within two weeks of receiving a completed copy of this Agreement, including the Schedule of Deviations (if any), or when or just after this Agreement comes into effect, contact the employer’s agent (whose details are given in the Contract Data) to arrange the delivery of any bonds, guarantees, proof of insurance and any other documentation to be provided in terms of the Conditions of Contract identified in the Contract Data.",
+      "page": 20,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R60",
+      "requirement": "Failure to fulfill obligations to deliver bonds, guarantees, proof of insurance constitutes repudiation of agreement.",
+      "quote": "Failure to fulfil any of these obligations in accordance with those terms shall constitute a repudiation of this agreement.",
+      "page": 20,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R61",
+      "requirement": "Agreement becomes effective when tenderer receives one fully completed original copy; must notify employer in writing within five days if cannot accept, otherwise binding.",
+      "quote": "Notwithstanding anything contained herein, this Agreement comes into effect on the date when the tenderer receives one fully completed original copy of this document, including the Schedule of Deviations (if any). Unless the tenderer (now Contractor) within five days of the date of such receipt notifies the Employer in writing of any reason why he cannot accept the contents of this Agreement, this Agreement shall constitute a binding contract between the parties.",
+      "page": 20,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R62",
+      "requirement": "Complete and submit MBD 8 Declaration of Bidder’s Past Supply Chain Management Practices as part of bid.",
+      "quote": "This Municipal Bidding Document must form part of all bids invited.",
+      "page": 21,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R63",
+      "requirement": "Answer questionnaire in MBD 8 regarding restricted suppliers, tender defaulters, fraud/corruption convictions, arrears, contract terminations.",
+      "quote": "In order to give effect to the above, the following questionnaire must be completed and submitted with the bid.",
+      "page": 21,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R64",
+      "requirement": "Certify that information furnished on MBD 8 is true and correct; accept that false declaration may lead to cancellation and further action.",
+      "quote": "I, THE UNDERSIGNED (FULL NAME) …………..……………………………..…… CERTIFY THAT THE INFORMATION FURNISHED ON THIS DECLARATION FORM TRUE AND CORRECT.\nI ACCEPT THAT, IN ADDITION TO CANCELLATION OF A CONTRACT, ACTION MAY BE TAKEN AGAINST ME SHOULD THIS DECLARATION PROVE TO BE FALSE.",
+      "page": 22,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R65",
+      "requirement": "Complete and submit MBD 9 Certificate of Independent Bid Determination with bid.",
+      "quote": "In order to give effect to the above, the attached Certificate of Bid Determination (MBD 9) must be completed and submitted with the bid:",
+      "page": 23,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R66",
+      "requirement": "Read and understand contents of MBD 9; understand bid will be disqualified if certificate not true and complete.",
+      "quote": "1. I have read and I understand the contents of this Certificate;\n2. I understand that the accompanying bid will be disqualified if this Certificate is found not to be true and complete in every respect;",
+      "page": 24,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R67",
+      "requirement": "Be authorised by bidder to sign MBD 9 and submit accompanying bid on behalf of bidder.",
+      "quote": "3. I am authorized by the bidder to sign this Certificate, and to submit the accompanying bid, on behalf of the bidder;",
+      "page": 24,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 19-24"
+    },
+    {
+      "id": "R68",
+      "requirement": "The bidder must arrive at the bid independently, without consultation, communication, agreement or arrangement with any competitor.",
+      "quote": "The bidder has arrived at the accompanying bid independently from, and without consultation, communication, agreement or arrangement with any competitor.",
+      "page": 25,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 25-30"
+    },
+    {
+      "id": "R69",
+      "requirement": "Communication between partners in a joint venture or consortium will not be construed as collusive bidding.",
+      "quote": "However communication between partners in a joint venture or consortium³ will not be construed as collusive bidding.",
+      "page": 25,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 25-30"
+    },
+    {
+      "id": "R70",
+      "requirement": "There must be no consultation, communication, agreement or arrangement with any competitor regarding prices, geographical area, methods/formulas for price calculation, intention to submit a bid, submission of a non‑spec‑compliant bid, or bidding with the intention not to win.",
+      "quote": "In particular, without limiting the generality of paragraphs 6 above, there has been no consultation, communication, agreement or arrangement with any competitor regarding: (a) prices; (b) geographical area where product or service will be rendered (market allocation) (c) methods, factors or formulas used to calculate prices; (d) the intention or decision to submit or not to submit, a bid; (e) the submission of a bid which does not meet the specifications and conditions of the bid; or (f) bidding with the intention not to win the bid.",
+      "page": 25,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 25-30"
+    },
+    {
+      "id": "R71",
+      "requirement": "There must be no consultations, communications, agreements or arrangements with any competitor regarding the quality, quantity, specifications, conditions or delivery particulars of the products or services.",
+      "quote": "In addition, there have been no consultations, communications, agreements or arrangements with any competitor regarding the quality, quantity, specifications and conditions or delivery particulars of the products or services to which this bid invitation relates.",
+      "page": 25,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 25-30"
+    },
+    {
+      "id": "R72",
+      "requirement": "The terms of the bid must not be disclosed, directly or indirectly, to any competitor prior to the official bid opening or awarding of the contract.",
+      "quote": "The terms of the accompanying bid have not been, and will not be, disclosed by the bidder, directly or indirectly, to any competitor, prior to the date and time of the official bid opening or of the awarding of the contract.",
+      "page": 25,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 25-30"
+    },
+    {
+      "id": "R73",
+      "requirement": "The bidder must sign and date the bid form, indicating position and name of bidder.",
+      "quote": "Signature ……………………………………… Date ………………………………… Position ……………………………………… Name of Bidder",
+      "page": 26,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 25-30"
+    },
+    {
+      "id": "R74",
+      "requirement": "An acceptable bid must comply in all respects with the specifications and conditions set out in the bid document.",
+      "quote": "“Acceptable bid” means any bid, which, in all respects, complies with the specifications and conditions of the bid as set out in the bid document.",
+      "page": 28,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 25-30"
+    },
+    {
+      "id": "R75",
+      "requirement": "A bid must be a written offer in a prescribed or stipulated form in response to an invitation by an organ of State for the provision of goods, works or services.",
+      "quote": "“Bid” means a written offer in a prescribed or stipulated form in response to an invitation by an organ of State for the provision of goods, works or services.",
+      "page": 28,
+      "category": "eligibility",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 25-30"
+    },
+    {
+      "id": "R76",
+      "requirement": "Bids must be received by the closing time specified in the bidding documents.",
+      "quote": "“Closing time” means the date and hour specified in the bidding documents for the receipt of bids.",
+      "page": 28,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 25-30"
+    },
+    {
+      "id": "R77",
+      "requirement": "Bidder must submit an original tax clearance certificate issued by SARS.",
+      "quote": "Prior to the award of a bid, Parliament must be in possession of a tax clearance certificate, submitted by the bidder. This certificate must be an original issued by the South African Revenue Services (SARS).",
+      "page": 41,
+      "category": "legal",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 1.0,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 37-42"
+    },
+    {
+      "id": "R78",
+      "requirement": "Bidder must sign a declaration certifying they have read and understood the information and accept that the State may reject the bid or act against them if the declaration is false.",
+      "quote": "I, THE UNDERSIGNED ... CERTIFY THAT THE I HAVE READ AND UNDERSTAND THE INFORMATION ABOVE. I ACCEPT THAT THE STATE MAY REJECT THE BID OR ACT AGAINST ME IN TERMS OF PARAGRAPH 23 OF THE GENERAL CONDITIONS OF CONTRACT SHOULD THIS DECLARATION PROVE TO BE FALSE.",
+      "page": 42,
+      "category": "submission",
+      "mandatory": true,
+      "verified": true,
+      "match_score": 0.927,
+      "cited_page": null,
+      "joined": false,
+      "source_chunk": "pages 37-42"
+    }
+  ],
+  "decision": {
+    "verdict": "bid with conditions",
+    "confidence": 0.85,
+    "scope": {
+      "title": "SUPPLY AND DELIVERY OF SEWERAGE WATER PUMPS SPARES & INSTRUMENTS STOCK ITEMS FOR A PERIOD OF 36 MONTHS",
+      "buyer": "Abaqulusi Municipality",
+      "buys": "The tender buys the supply and delivery of sewerage water pump spares and instrumentation stock items over a 36-month period for Abaqulusi Municipality.",
+      "fit": "fits",
+      "why": "The company specialises in supplying and servicing submersible and centrifugal water and sewage pumps, spares and instrumentation to municipalities, is CSD registered and has eight years' experience in exactly this line of work."
+    },
+    "deciding": [
+      {
+        "id": "R4",
+        "requirement": "Bidders must ensure compliance with their tax obligations.",
+        "page": 3,
+        "verified": true,
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention tax compliance status."
+      },
+      {
+        "id": "R5",
+        "requirement": "Bidders are required to submit their unique Personal Identification Number (PIN) issued by SARS to enable the organ of state to view the taxpayer’s profile and tax status.",
+        "page": 3,
+        "verified": true,
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention a SARS PIN."
+      },
+      {
+        "id": "R15",
+        "requirement": "Central Supplier Database registration report (detailed) must be attached to claim specific goals.",
+        "page": 5,
+        "verified": true,
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention a detailed CSD registration report."
+      },
+      {
+        "id": "R17",
+        "requirement": "SARS PIN or Tax Clearance certificate must be submitted.",
+        "page": 5,
+        "verified": true,
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention a SARS PIN or tax clearance certificate."
+      },
+      {
+        "id": "R18",
+        "requirement": "Certified B‑BBEE certificate from a registered accountant or original sworn affidavit from a Commissioner of Oath is required.",
+        "page": 5,
+        "verified": true,
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile states B-BBEE level 2 but does not mention a certified certificate."
+      },
+      {
+        "id": "R19",
+        "requirement": "A certified current account in terms of water and electricity / rates and taxes obtainable from the local municipality / Induna/Inkosi / Councillor, not older than three months or a lease agreement, must be submitted.",
+        "page": 5,
+        "verified": true,
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention a current municipal account or lease agreement."
+      },
+      {
+        "id": "R21",
+        "requirement": "SABS Approval Certificate must be submitted.",
+        "page": 5,
+        "verified": true,
+        "status": "not stated",
+        "hard": true,
+        "why": "Profile does not mention a SABS Approval Certificate for its pumps."
+      },
+      {
+        "id": "R22",
+        "requirement": "Proof of bank rating (A, B, C) must be submitted.",
+        "page": 5,
+        "verified": true,
+        "status": "not stated",
+        "hard": true,
+        "why": "Profile does not mention a bank rating letter (A, B, or C)."
+      }
+    ],
+    "unmet_total": 20,
+    "reasons": [
+      "The company's core business matches the tender scope exactly, with 8 years' experience supplying municipalities and CSD registration.",
+      "Critical compliance documents are missing: a valid SARS Tax Clearance Certificate, certified B-BBEE certificate, and current municipal account. [R4, R18, R19]",
+      "Mandatory submissions also include SABS Approval Certificate, bank rating letter, and company registration documents with director IDs. [R21, R22, R16]",
+      "The company must further provide a detailed CSD report, experience proof, technical specifications, and confirm no conflict of interest plus ability to furnish bonds and insurance within two weeks. [R15, R23, R46]"
+    ],
+    "conditions": [
+      "Obtain a valid SARS Tax Clearance Certificate (including SARS PIN and submission of TCC 001 form) [R4, R5, R17, R24, R27, R44, R77]",
+      "Provide a certified B-BBEE certificate and documentation to claim specific goals points [R18, R38]",
+      "Submit a current municipal account or lease agreement (not older than three months) [R19]",
+      "Provide a SABS Approval Certificate for the pumps [R21]",
+      "Submit a bank rating letter (A, B, or C) [R22]",
+      "Attach the company registration document, certified identity documents of directors/owners, and a detailed CSD registration report [R16, R20, R15]",
+      "Supply reference letters or purchase orders proving 8 years of municipal supply experience [R23]",
+      "Prepare technical specifications for all tendered items; confirm no conflict of interest (not in state service, not a municipal advisor) and ability to provide bonds, guarantees, and insurance within two weeks of award [R46, R12, R13, R59]"
+    ],
+    "assessments": [
+      {
+        "id": "R1",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can deliver the bid to the specified bid box."
+      },
+      {
+        "id": "R2",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can ensure timely delivery to the correct address."
+      },
+      {
+        "id": "R3",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can complete the official forms provided."
+      },
+      {
+        "id": "R4",
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention tax compliance status."
+      },
+      {
+        "id": "R5",
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention a SARS PIN."
+      },
+      {
+        "id": "R6",
+        "status": "met",
+        "hard": false,
+        "why": "The company is South African, not a foreign supplier."
+      },
+      {
+        "id": "R7",
+        "status": "met",
+        "hard": false,
+        "why": "The company is CSD registered and can provide its CSD number."
+      },
+      {
+        "id": "R8",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can complete all Municipal Bidding Documents."
+      },
+      {
+        "id": "R9",
+        "status": "routine",
+        "hard": false,
+        "why": "The company acknowledges the 90-day tender validity period."
+      },
+      {
+        "id": "R10",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can prepare the bid documents and envelope as specified."
+      },
+      {
+        "id": "R11",
+        "status": "met",
+        "hard": false,
+        "why": "The company is CSD registered."
+      },
+      {
+        "id": "R12",
+        "status": "not stated",
+        "hard": false,
+        "why": "The profile does not confirm the company is not in the service of the state."
+      },
+      {
+        "id": "R13",
+        "status": "not stated",
+        "hard": false,
+        "why": "The profile does not confirm the company is not an advisor or consultant to the Municipality."
+      },
+      {
+        "id": "R14",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can pay the bid fee and attach proof of payment."
+      },
+      {
+        "id": "R15",
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention a detailed CSD registration report."
+      },
+      {
+        "id": "R16",
+        "status": "not stated",
+        "hard": false,
+        "why": "The profile does not mention a company registration document."
+      },
+      {
+        "id": "R17",
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention a SARS PIN or tax clearance certificate."
+      },
+      {
+        "id": "R18",
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile states B-BBEE level 2 but does not mention a certified certificate."
+      },
+      {
+        "id": "R19",
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention a current municipal account or lease agreement."
+      },
+      {
+        "id": "R20",
+        "status": "not stated",
+        "hard": false,
+        "why": "The profile does not mention identity documents of directors and owners."
+      },
+      {
+        "id": "R21",
+        "status": "not stated",
+        "hard": true,
+        "why": "Profile does not mention a SABS Approval Certificate for its pumps."
+      },
+      {
+        "id": "R22",
+        "status": "not stated",
+        "hard": true,
+        "why": "Profile does not mention a bank rating letter (A, B, or C)."
+      },
+      {
+        "id": "R23",
+        "status": "not stated",
+        "hard": false,
+        "why": "Profile notes 8 years supplying municipalities but does not confirm reference letters or purchase orders are available."
+      },
+      {
+        "id": "R24",
+        "status": "not stated",
+        "hard": true,
+        "why": "Profile does not mention a valid Tax Clearance Certificate from SARS."
+      },
+      {
+        "id": "R25",
+        "status": "met",
+        "hard": false,
+        "why": "Company is based in South Africa, so the foreign‑bidder TCC rule does not apply."
+      },
+      {
+        "id": "R26",
+        "status": "met",
+        "hard": false,
+        "why": "Company is not part of a consortium, joint venture, or sub‑contractor arrangement."
+      },
+      {
+        "id": "R27",
+        "status": "not stated",
+        "hard": true,
+        "why": "Profile does not mention completion of the TCC 001 application form for a Tax Clearance Certificate."
+      },
+      {
+        "id": "R28",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must quote firm prices in its bid."
+      },
+      {
+        "id": "R29",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must ensure its bid price remains valid for 90 days from the closing date."
+      },
+      {
+        "id": "R30",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must provide brand, model, origin, compliance, delivery and cost details in its bid."
+      },
+      {
+        "id": "R31",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must fill in its name, bid number, closing time and date on the pricing schedule."
+      },
+      {
+        "id": "R32",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must declare it is not in the service of the state."
+      },
+      {
+        "id": "R33",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must complete the Declaration of Interest questionnaire (sections 3.1‑3.14)."
+      },
+      {
+        "id": "R34",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must disclose any state‑service relationships in the questionnaire."
+      },
+      {
+        "id": "R35",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must complete the Preference Points Claim Form (MBD 6.1)."
+      },
+      {
+        "id": "R36",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must review the tender conditions and preferential procurement regulations before completing forms."
+      },
+      {
+        "id": "R37",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must indicate the 80/20 preference point system on the claim form."
+      },
+      {
+        "id": "R38",
+        "status": "not stated",
+        "hard": false,
+        "why": "Profile states B‑BBEE level 2 but does not confirm proof documentation is ready for submission."
+      },
+      {
+        "id": "R39",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must be prepared to substantiate its B‑BBEE claim if requested."
+      },
+      {
+        "id": "R40",
+        "status": "routine",
+        "hard": false,
+        "why": "Company must sign the declaration certifying the preference claim is true and correct."
+      },
+      {
+        "id": "R41",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can sign, date, and provide its Johannesburg address when submitting the bid."
+      },
+      {
+        "id": "R42",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can complete and sign the required duplicate forms as part of bid submission."
+      },
+      {
+        "id": "R43",
+        "status": "routine",
+        "hard": false,
+        "why": "The company will need to calculate and state its total price inclusive of VAT in words and figures when preparing the bid."
+      },
+      {
+        "id": "R44",
+        "status": "not stated",
+        "hard": false,
+        "why": "The profile does not mention a valid Tax Clearance Certificate; the company must confirm it has one or obtain it from SARS."
+      },
+      {
+        "id": "R45",
+        "status": "routine",
+        "hard": false,
+        "why": "The company will need to prepare and submit pricing schedules as part of its bid."
+      },
+      {
+        "id": "R46",
+        "status": "not stated",
+        "hard": false,
+        "why": "The profile does not mention specific technical specifications for the tendered items; the company must provide them."
+      },
+      {
+        "id": "R47",
+        "status": "met",
+        "hard": false,
+        "why": "The company holds B-BBEE level 2 status, enabling it to make the required preference claims."
+      },
+      {
+        "id": "R48",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can complete and sign the Declaration of Interest as part of bid submission."
+      },
+      {
+        "id": "R49",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can complete and sign the Declaration of past SCM practices as part of bid submission."
+      },
+      {
+        "id": "R50",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can complete and sign the Certificate of Independent Bid Determination as part of bid submission."
+      },
+      {
+        "id": "R51",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can attach the required contract documents as part of its bid submission."
+      },
+      {
+        "id": "R52",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can make this confirmation when signing the Form of Offer and Acceptance."
+      },
+      {
+        "id": "R53",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can accept this responsibility when signing the Form of Offer and Acceptance."
+      },
+      {
+        "id": "R54",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can make this declaration when signing the Form of Offer and Acceptance."
+      },
+      {
+        "id": "R55",
+        "status": "routine",
+        "hard": false,
+        "why": "The company's authorized signatory can confirm this when signing."
+      },
+      {
+        "id": "R56",
+        "status": "routine",
+        "hard": false,
+        "why": "The company's authorized representative can sign with required details."
+      },
+      {
+        "id": "R57",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can arrange a witness to sign as required."
+      },
+      {
+        "id": "R58",
+        "status": "routine",
+        "hard": false,
+        "why": "The company can provide its name and Johannesburg address."
+      },
+      {
+        "id": "R59",
+        "status": "not stated",
+        "hard": true,
+        "why": "The profile does not mention the company's ability to provide bonds, guarantees, or proof of insurance; it must confirm it can arrange these within two weeks of award."
+      },
+      {
+        "id": "R60",
+        "status": "routine",
+        "hard": false,
+        "why": "The company accepts this condition by signing the agreement."
+      },
+      {
+        "id": "R61",
+        "status": "routine",
+        "hard": false,
+        "why": "Standard contract acceptance clause completed upon award."
+      },
+      {
+        "id": "R62",
+        "status": "routine",
+        "hard": false,
+        "why": "Standard municipal bidding form completed during bid preparation."
+      },
+      {
+        "id": "R63",
+        "status": "routine",
+        "hard": false,
+        "why": "Questionnaire part of MBD 8 form filled in when submitting bid."
+      },
+      {
+        "id": "R64",
+        "status": "routine",
+        "hard": false,
+        "why": "Certification signature on MBD 8 form signed by authorised representative."
+      },
+      {
+        "id": "R65",
+        "status": "routine",
+        "hard": false,
+        "why": "Standard Certificate of Independent Bid Determination submitted with bid."
+      },
+      {
+        "id": "R66",
+        "status": "routine",
+        "hard": false,
+        "why": "Acknowledgement clauses in MBD 9 read and accepted when signing."
+      },
+      {
+        "id": "R67",
+        "status": "routine",
+        "hard": false,
+        "why": "Authorised signatory signs MBD 9 on company's behalf."
+      },
+      {
+        "id": "R68",
+        "status": "routine",
+        "hard": false,
+        "why": "Non-collusion declaration made in MBD 9."
+      },
+      {
+        "id": "R69",
+        "status": "routine",
+        "hard": false,
+        "why": "Clarification on joint venture communications noted in MBD 9."
+      },
+      {
+        "id": "R70",
+        "status": "routine",
+        "hard": false,
+        "why": "Specific non-collusion declarations on pricing and market allocation made in MBD 9."
+      },
+      {
+        "id": "R71",
+        "status": "routine",
+        "hard": false,
+        "why": "Non-collusion declaration on technical particulars made in MBD 9."
+      },
+      {
+        "id": "R72",
+        "status": "routine",
+        "hard": false,
+        "why": "Bid confidentiality declaration made in MBD 9."
+      },
+      {
+        "id": "R73",
+        "status": "routine",
+        "hard": false,
+        "why": "Bid form signed and dated by authorised representative."
+      },
+      {
+        "id": "R74",
+        "status": "met",
+        "hard": false,
+        "why": "Company supplies sewerage water pump spares and instrumentation to municipalities, matching tender scope."
+      },
+      {
+        "id": "R75",
+        "status": "routine",
+        "hard": false,
+        "why": "Bid submitted in prescribed form as required."
+      },
+      {
+        "id": "R76",
+        "status": "routine",
+        "hard": false,
+        "why": "Bid submitted before closing time as per tender instructions."
+      },
+      {
+        "id": "R77",
+        "status": "not stated",
+        "hard": true,
+        "why": "Profile does not mention a current SARS tax clearance certificate; must be obtained from SARS."
+      },
+      {
+        "id": "R78",
+        "status": "routine",
+        "hard": false,
+        "why": "Declaration signed confirming understanding and acceptance of bid conditions."
+      }
+    ],
+    "counts": {
+      "fails": 0,
+      "not stated": 20,
+      "met": 7,
+      "routine": 51
+    },
+    "unassessed": [],
+    "rejected_ids": [],
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+  },
+  "decision_note": null
+}

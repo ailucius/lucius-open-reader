@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, Response, StreamingResponse
 from pydantic import BaseModel
 
@@ -22,6 +22,7 @@ from .llm import LLMClient, get_client
 from .pipeline import Event, run_reader
 
 STATIC = Path(__file__).parent / "static"
+EXAMPLE = STATIC / "example.json"  # one saved run from the live models, served without calling them
 MAX_RUNS = 20
 RUN_TTL_S = 3600
 
@@ -52,6 +53,18 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
     settings = settings or Settings.from_env()
     app = FastAPI(title="Lucius Open Reader", version=__version__)
     runs: dict[str, Run] = {}
+    started: list[tuple[float, str]] = []  # (time, client address) of runs started, for the limits
+
+    def check_limits(address: str) -> None:
+        now = time.time()
+        started[:] = [(t, a) for t, a in started if now - t < 86400]
+        if settings.runs_per_day and len(started) >= settings.runs_per_day:
+            raise HTTPException(429, "This demo has read its tenders for today. Try again tomorrow, or open the finished example.")
+        if settings.runs_per_hour_per_ip:
+            recent = sum(1 for t, a in started if a == address and now - t < 3600)
+            if recent >= settings.runs_per_hour_per_ip:
+                raise HTTPException(429, "You have read the most tenders allowed in an hour on this demo. Try again later.")
+        started.append((now, address))
 
     def client() -> LLMClient:
         try:
@@ -81,8 +94,15 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
             "decider_model": settings.decider_model,
             "llm_ready": settings.fake_llm or bool(settings.nebius_api_key),
             "find_ready": bool(settings.tavily_api_key),
+            "example_ready": EXAMPLE.is_file(),
             "max_pdf_mb": settings.max_pdf_mb,
         }
+
+    @app.get("/api/example")
+    async def example() -> FileResponse:
+        if not EXAMPLE.is_file():
+            raise HTTPException(404, "no example on this server")
+        return FileResponse(EXAMPLE, media_type="application/json")
 
     @app.post("/api/find")
     async def find(req: FindRequest) -> dict[str, Any]:
@@ -94,6 +114,7 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
 
     @app.post("/api/runs")
     async def start_run(
+        request: Request,
         url: str = Form(""),
         profile: str = Form(""),
         file: UploadFile | None = File(None),
@@ -113,6 +134,8 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
             raise HTTPException(400, "give a PDF URL or upload a PDF")
         if len(profile) > 4000:
             raise HTTPException(400, "profile is longer than 4000 characters")
+        forwarded = request.headers.get("x-forwarded-for", "")
+        check_limits(forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown"))
 
         prune()
         run = Run(id=uuid.uuid4().hex)

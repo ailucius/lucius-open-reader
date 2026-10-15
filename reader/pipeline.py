@@ -46,10 +46,15 @@ async def run_reader(
 
     await emit({"type": "stage", "stage": "pages", "message": "Extracting page text"})
     pages: list[Page] = await asyncio.to_thread(extract_pages, pdf, settings.max_pages)
-    empty = sum(1 for p in pages if len(p.text.strip()) < 20)
+    empty_numbers = [p.number for p in pages if len(p.text.strip()) < 20]
+    empty = len(empty_numbers)
     chunks = chunk_pages(pages, settings.chunk_pages)
-    stats = ReadStats(pages_total=len(pages), chunks_total=len(chunks), empty_pages=empty)
-    await emit({"type": "pages", "total": len(pages), "empty": empty, "chunks": len(chunks)})
+    stats = ReadStats(
+        pages_total=len(pages), chunks_total=len(chunks), empty_pages=empty, empty_page_numbers=empty_numbers
+    )
+    await emit(
+        {"type": "pages", "total": len(pages), "empty": empty, "empty_pages": empty_numbers, "chunks": len(chunks)}
+    )
 
     found = 0
     done_pages = 0

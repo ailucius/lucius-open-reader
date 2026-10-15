@@ -87,6 +87,7 @@ class ReadStats(BaseModel):
     pages_corrected: int = 0
     joined_quotes: int = 0
     empty_pages: int = 0
+    empty_page_numbers: list[int] = []
     thinking_retries: int = 0
 
 

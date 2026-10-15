@@ -68,3 +68,32 @@ def test_cli_prints_json(tmp_path: Path, tender_pdf: bytes, capsys: pytest.Captu
     assert out["stats"]["pages_total"] == 7
     assert out["stats"]["chunks_total"] == 2
     assert out["decision"]["verdict"] == "bid with conditions"
+
+
+def test_web_runs_are_limited_per_address_and_per_day(tender_pdf: bytes) -> None:
+    files = {"file": ("tender.pdf", tender_pdf, "application/pdf")}
+    app = create_app(Settings(fake_llm=True, runs_per_hour_per_ip=2, runs_per_day=3))
+    with TestClient(app) as client:
+        a = {"x-forwarded-for": "198.51.100.7"}
+        b = {"x-forwarded-for": "203.0.113.9, 10.0.0.1"}
+        assert client.post("/api/runs", files=files, headers=a).status_code == 200
+        assert client.post("/api/runs", files=files, headers=a).status_code == 200
+        third = client.post("/api/runs", files=files, headers=a)
+        assert third.status_code == 429 and "hour" in third.json()["detail"]
+        assert client.post("/api/runs", files=files, headers=b).status_code == 200
+        day = client.post("/api/runs", files=files, headers={"x-forwarded-for": "192.0.2.1"})
+        assert day.status_code == 429 and "today" in day.json()["detail"]
+
+
+def test_example_route_serves_the_saved_run_when_present() -> None:
+    from reader.app import EXAMPLE
+
+    app = create_app(Settings(fake_llm=True))
+    with TestClient(app) as client:
+        assert client.get("/api/health").json()["example_ready"] is EXAMPLE.is_file()
+        resp = client.get("/api/example")
+        if EXAMPLE.is_file():
+            body = resp.json()
+            assert body["requirements"] and body["decision"]["verdict"] and body["pdf_url"].startswith("https://")
+        else:
+            assert resp.status_code == 404

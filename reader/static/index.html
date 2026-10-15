@@ -4,179 +4,293 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Lucius Open Reader</title>
-<meta name="description" content="Read a public tender before you bid: requirements with verified quotes and a bid / no-bid call.">
+<meta name="description" content="Read a public tender before you bid: every requirement with a verified quote and its page, and a bid or no-bid call you can trace.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700;800&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
 <style>
 :root {
-  --bg: #f6f5f1; --panel: #ffffff; --ink: #1c1d1f; --muted: #5d6066; --line: #dedbd3;
-  --accent: #0f5c4c; --accent-ink: #ffffff; --ok: #1d6b3a; --ok-bg: #e3f1e7;
-  --warn: #8a4b00; --warn-bg: #fbeedb; --bad: #9b1c1c; --bad-bg: #f9e2e2; --focus: #2a6df4;
-  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --desk: #e2e8ee; --sheet: #ffffff; --ink: #12212f; --muted: #536170; --line: #c9d3dc; --soft: #eef2f5;
+  --blue: #1f4f8b; --blue-ink: #ffffff; --blue-soft: #dfe8f4;
+  --go: #1d6e45; --go-soft: #e1f0e7; --cond: #9a5600; --cond-soft: #f8ebd6; --stop: #a8261e; --stop-soft: #f7e1df;
+  --tile: #d3dbe3; --tile-read: #9fb3c8; --focus: #2f6fdf;
+  --sans: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --serif: "Source Serif 4", Georgia, "Times New Roman", serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #141517; --panel: #1c1e21; --ink: #e8e6e1; --muted: #a0a3a9; --line: #33363b;
-    --accent: #4cb39a; --accent-ink: #0d1412; --ok: #7fd19b; --ok-bg: #1d3226;
-    --warn: #f0b467; --warn-bg: #3a2c19; --bad: #f19a9a; --bad-bg: #3b1f1f; --focus: #7aa7ff;
+    --desk: #0e141a; --sheet: #16202a; --ink: #e2e8ee; --muted: #9aa8b6; --line: #2b3a48; --soft: #1c2834;
+    --blue: #7fb0f0; --blue-ink: #0b1622; --blue-soft: #1d3149;
+    --go: #79cf9f; --go-soft: #173226; --cond: #f0b35f; --cond-soft: #3a2b17; --stop: #f29a92; --stop-soft: #3d1f1d;
+    --tile: #243241; --tile-read: #4d6a88; --focus: #8ab6ff;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #141517; --panel: #1c1e21; --ink: #e8e6e1; --muted: #a0a3a9; --line: #33363b;
-  --accent: #4cb39a; --accent-ink: #0d1412; --ok: #7fd19b; --ok-bg: #1d3226;
-  --warn: #f0b467; --warn-bg: #3a2c19; --bad: #f19a9a; --bad-bg: #3b1f1f; --focus: #7aa7ff;
+  --desk: #0e141a; --sheet: #16202a; --ink: #e2e8ee; --muted: #9aa8b6; --line: #2b3a48; --soft: #1c2834;
+  --blue: #7fb0f0; --blue-ink: #0b1622; --blue-soft: #1d3149;
+  --go: #79cf9f; --go-soft: #173226; --cond: #f0b35f; --cond-soft: #3a2b17; --stop: #f29a92; --stop-soft: #3d1f1d;
+  --tile: #243241; --tile-read: #4d6a88; --focus: #8ab6ff;
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink);
-  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-variant-numeric: tabular-nums; }
-header { border-bottom: 1px solid var(--line); background: var(--panel); }
-.bar { max-width: 1200px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
-.brand { font-weight: 650; letter-spacing: -0.01em; font-size: 17px; }
-.tag { color: var(--muted); }
-.models { margin-left: auto; color: var(--muted); font-size: 12.5px; font-family: var(--mono); }
-main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
-@media (max-width: 900px) { main { grid-template-columns: 1fr; } .models { margin-left: 0; } }
-section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px; }
-h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
-label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 4px; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--desk); color: var(--ink); font: 15px/1.55 var(--sans); font-variant-numeric: tabular-nums; }
+a { color: var(--blue); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+header { background: var(--sheet); border-bottom: 1px solid var(--line); }
+.top { max-width: 1240px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; }
+.name { font-weight: 800; font-size: 18px; letter-spacing: -0.015em; }
+.what { color: var(--muted); }
+.engine { margin-left: auto; color: var(--muted); font-size: 13px; }
+.engine .chip { margin-right: 6px; }
+.engine b { color: var(--ink); font-weight: 600; }
+.theme { font: 500 13px var(--sans); color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer; }
+
+main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 56px; display: grid; grid-template-columns: 370px minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 940px) { main { grid-template-columns: 1fr; } .engine { margin-left: 0; order: 3; width: 100%; } }
+.col { display: grid; gap: 16px; min-width: 0; }
+.sheet { background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 18px; min-width: 0; }
+h2 { font-size: 16px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.005em; }
+.sub { color: var(--muted); font-size: 13.5px; margin: 0 0 12px; }
+label { display: block; font-size: 13px; font-weight: 600; margin: 14px 0 5px; }
 input[type=text], input[type=url], textarea, select {
-  width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
-  border-radius: 4px; padding: 8px 10px; }
-textarea { min-height: 110px; resize: vertical; }
-input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
-  outline: 2px solid var(--focus); outline-offset: 1px; }
-button { font: inherit; border-radius: 4px; padding: 8px 14px; border: 1px solid var(--accent); cursor: pointer; }
-button.primary { background: var(--accent); color: var(--accent-ink); font-weight: 600; width: 100%; margin-top: 14px; }
-button.ghost { background: transparent; color: var(--accent); }
-button:disabled { opacity: 0.55; cursor: wait; }
-.row { display: flex; gap: 8px; }
-.row > input { flex: 1; }
-.hint { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; }
-.hits { list-style: none; margin: 10px 0 0; padding: 0; max-height: 320px; overflow: auto; }
-.hits li { border-top: 1px solid var(--line); padding: 8px 0; }
-.hits a { color: var(--ink); text-decoration: none; font-weight: 550; word-break: break-word; }
+  width: 100%; font: 15px var(--sans); color: var(--ink); background: var(--soft); border: 1px solid var(--line); border-radius: 4px; padding: 9px 11px; }
+textarea { min-height: 116px; resize: vertical; line-height: 1.45; }
+input[type=file] { font: 14px var(--sans); color: var(--muted); max-width: 100%; }
+button { font: 600 14.5px var(--sans); border-radius: 4px; padding: 9px 16px; cursor: pointer; border: 1px solid var(--blue); }
+.primary { background: var(--blue); color: var(--blue-ink); width: 100%; margin-top: 16px; padding: 11px 16px; font-size: 15.5px; }
+.quiet { background: transparent; color: var(--blue); }
+button:disabled { opacity: 0.55; cursor: progress; }
+.inline { display: flex; gap: 8px; }
+.inline > input { flex: 1; min-width: 0; }
+.alt { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 13px; margin: 12px 0 0; }
+.alt::before, .alt::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+.samples { color: var(--muted); font-size: 13.5px; margin: 12px 0 0; }
+.linkish { font: 600 13.5px var(--sans); color: var(--blue); background: none; border: 0; padding: 0; text-decoration: underline; text-underline-offset: 2px; }
+.error { color: var(--stop); background: var(--stop-soft); padding: 9px 11px; border-radius: 4px; margin-top: 12px; font-size: 14px; }
+.hidden { display: none !important; }
+
+.hits { list-style: none; margin: 10px 0 0; padding: 0; max-height: 360px; overflow: auto; }
+.hits li { border-top: 1px solid var(--line); padding: 10px 0; }
+.hits a { color: var(--ink); font-weight: 600; text-decoration: none; overflow-wrap: anywhere; }
 .hits a:hover { text-decoration: underline; }
-.hits .meta { color: var(--muted); font-size: 12.5px; }
-.hits button { padding: 2px 8px; font-size: 12.5px; margin-top: 4px; }
-.or { text-align: center; color: var(--muted); font-size: 12.5px; margin: 10px 0 0; }
-.stack { display: grid; gap: 16px; align-content: start; }
-.progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin: 8px 0; }
-.progress > div { height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
-.log { font-family: var(--mono); font-size: 12.5px; color: var(--muted); max-height: 140px; overflow: auto; margin: 0; padding: 0; list-style: none; }
-.counts { display: flex; gap: 22px; flex-wrap: wrap; }
-.counts b { display: block; font-size: 22px; font-weight: 650; }
-.counts span { color: var(--muted); font-size: 12.5px; }
-.verdict { border-left: 4px solid var(--accent); }
-.verdict.bid { border-left-color: var(--ok); }
-.verdict.cond { border-left-color: var(--warn); }
-.verdict.no { border-left-color: var(--bad); }
-.verdict h3 { margin: 0; font-size: 24px; text-transform: capitalize; }
-.verdict .conf { color: var(--muted); }
-.verdict ul { margin: 8px 0 0; padding-left: 18px; }
-.badge { display: inline-block; font-size: 12px; padding: 1px 6px; border-radius: 3px; border: 1px solid transparent; white-space: nowrap; }
-.badge.ok { color: var(--ok); background: var(--ok-bg); }
-.badge.warn { color: var(--warn); background: var(--warn-bg); }
-.badge.bad { color: var(--bad); background: var(--bad-bg); }
-.badge.plain { color: var(--muted); border-color: var(--line); }
-.filters { display: grid; grid-template-columns: 1fr 160px 150px 150px; gap: 8px; margin-bottom: 10px; }
-@media (max-width: 700px) { .filters { grid-template-columns: 1fr 1fr; } }
+.meta { color: var(--muted); font-size: 13px; }
+.hits button { font-size: 13px; padding: 4px 10px; margin-top: 6px; }
+
+/* the flow, before a run */
+.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 6px; }
+.step { padding: 12px 14px 12px 0; position: relative; }
+.step + .step { padding-left: 18px; border-left: 1px solid var(--line); }
+.step b { display: block; font-size: 15px; }
+.step span { color: var(--muted); font-size: 13.5px; }
+@media (max-width: 700px) { .flow { grid-template-columns: 1fr 1fr; } .step:nth-child(3) { border-left: 0; padding-left: 0; } }
+
+/* progress and the page ledger */
+.counts { display: flex; gap: 28px; flex-wrap: wrap; }
+.counts b { display: block; font-size: 26px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
+.counts span { color: var(--muted); font-size: 13px; }
+.ledger { display: grid; grid-template-columns: repeat(auto-fill, minmax(22px, 1fr)); gap: 4px; margin: 16px 0 6px; }
+.tile { height: 30px; border-radius: 3px; background: var(--tile); border: 0; padding: 0; position: relative; cursor: default;
+  font: 600 10px var(--sans); color: transparent; transition: background-color 0.35s ease; }
+.tile.read { background: var(--tile-read); }
+.tile.has { cursor: pointer; color: var(--blue-ink); }
+.tile.l1 { background: color-mix(in srgb, var(--blue) 45%, var(--tile)); }
+.tile.l2 { background: color-mix(in srgb, var(--blue) 72%, var(--tile)); }
+.tile.l3 { background: var(--blue); }
+.tile.failed { background: repeating-linear-gradient(135deg, var(--stop-soft) 0 4px, var(--stop) 4px 6px); }
+.tile.blank { background: repeating-linear-gradient(90deg, var(--tile) 0 3px, transparent 3px 6px); outline: 1px solid var(--tile); outline-offset: -1px; }
+.tile.decides::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--cond); }
+.tile.decides.stopper::after { background: var(--stop); }
+.tile.picked { outline: 2px solid var(--ink); outline-offset: 1px; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 2px; vertical-align: -2px; margin-right: 5px; background: var(--tile); }
+.legend i.l3 { background: var(--blue); }
+.legend i.read { background: var(--tile-read); }
+.legend i.blank { background: repeating-linear-gradient(90deg, var(--tile) 0 2px, transparent 2px 4px); outline: 1px solid var(--tile); outline-offset: -1px; }
+.legend i.failed { background: repeating-linear-gradient(135deg, var(--stop-soft) 0 3px, var(--stop) 3px 5px); }
+.legend i.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cond); vertical-align: 1px; }
+.log { list-style: none; margin: 12px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; max-height: 128px; overflow: auto; }
+.log li::before { content: "\2022"; margin-right: 8px; color: var(--line); }
+
+/* the call */
+.call { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 20px 26px; align-items: start; }
+@media (max-width: 640px) {
+  .call { grid-template-columns: 1fr; }
+  .stamp { justify-self: start; min-width: 0; max-width: calc(100% - 24px); margin: 8px 0 0 8px; }
+  .stamp .v { font-size: 19px; }
+  table, tbody, tr, td { display: block; }
+  thead { display: none; }
+  tr { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 4px 10px; padding: 12px 0; border-top: 1px solid var(--line); }
+  td { border: 0; padding: 0; grid-column: 2; }
+  td:first-child { grid-column: 1; grid-row: 1 / span 4; }
+  td.q { max-width: none; }
+  td:nth-child(4), td:nth-child(5) { display: inline-block; }
+}
+.stamp { --c: var(--cond); color: var(--c); border: 4px double var(--c); border-radius: 4px; padding: 10px 16px 8px; text-align: center;
+  transform: rotate(-3deg); font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; line-height: 1.1; min-width: 190px; }
+.stamp.go { --c: var(--go); } .stamp.stop { --c: var(--stop); }
+.stamp .v { font-size: 25px; display: block; }
+.stamp .c { font-size: 11.5px; letter-spacing: 0.1em; display: block; margin-top: 6px; font-weight: 700; opacity: 0.85; }
+.landed { animation: land 0.32s cubic-bezier(.2,.9,.3,1.2) both; }
+@keyframes land { from { transform: rotate(-3deg) scale(1.35); opacity: 0; } to { transform: rotate(-3deg) scale(1); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .landed { animation: none; } .tile { transition: none; } }
+.tender-title { font-size: 18px; font-weight: 700; line-height: 1.3; margin: 0; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.buyer { color: var(--muted); margin: 3px 0 10px; }
+.fit { display: inline-flex; gap: 8px; align-items: baseline; font-size: 14px; }
+.chip { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 7px; border-radius: 3px; white-space: nowrap; }
+.chip.go { color: var(--go); background: var(--go-soft); }
+.chip.cond { color: var(--cond); background: var(--cond-soft); }
+.chip.stop { color: var(--stop); background: var(--stop-soft); }
+.chip.plain { color: var(--muted); background: var(--soft); }
+.chip.blue { color: var(--blue); background: var(--blue-soft); }
+.tally { display: flex; gap: 18px; flex-wrap: wrap; margin: 14px 0 0; font-size: 13.5px; color: var(--muted); }
+.tally b { color: var(--ink); }
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 26px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--line); }
+@media (max-width: 760px) { .two { grid-template-columns: 1fr; } }
+h3 { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
+.reasons { margin: 0; padding-left: 18px; }
+.reasons li + li { margin-top: 6px; }
+.checklist { list-style: none; margin: 0; padding: 0; }
+.checklist li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 8px; }
+.checklist li + li { margin-top: 7px; }
+.checklist li::before { content: ""; width: 13px; height: 13px; border: 1.5px solid var(--muted); border-radius: 2px; margin-top: 5px; }
+.note { color: var(--muted); font-size: 13.5px; margin: 14px 0 0; }
+
+/* what decides it */
+.decides-list { list-style: none; margin: 0; padding: 0; }
+.decides-list li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 4px 14px; padding: 12px 0; border-top: 1px solid var(--line); }
+.decides-list li:first-child { border-top: 0; padding-top: 4px; }
+.pg { font-weight: 700; font-size: 14px; }
+.decides-list .req { font-weight: 600; }
+.decides-list .why { color: var(--muted); font-size: 14px; }
+.decides-list .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 5px; }
+
+/* the table */
+.filters { display: grid; grid-template-columns: minmax(0, 1fr) 150px 150px 150px; gap: 8px; margin: 12px 0 8px; }
+@media (max-width: 760px) { .filters { grid-template-columns: 1fr 1fr; } }
+.tablebar { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.clearpage { font-size: 13px; padding: 3px 9px; }
 .tablewrap { overflow-x: auto; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
-th, td { text-align: left; vertical-align: top; padding: 8px 6px; border-top: 1px solid var(--line); }
-th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-top: 0; }
-td.quote { color: var(--muted); font-size: 13px; max-width: 420px; }
-td a, .deciding a { color: var(--accent); }
-.deciding { list-style: none; padding: 0; margin: 0; }
-.deciding li { border-top: 1px solid var(--line); padding: 8px 0; }
-.error { color: var(--bad); background: var(--bad-bg); padding: 8px 10px; border-radius: 4px; margin-top: 10px; }
-.note { color: var(--muted); }
-.hidden { display: none !important; }
-.theme { background: transparent; border: 1px solid var(--line); color: var(--muted); padding: 3px 8px; font-size: 12.5px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 8px; border-top: 1px solid var(--line); }
+th { font-size: 12.5px; color: var(--muted); font-weight: 600; border-top: 0; padding-top: 2px; }
+td.q { font-family: var(--serif); font-size: 14.5px; line-height: 1.5; max-width: 440px; }
+td.q::before { content: "\201C"; } td.q::after { content: "\201D"; }
+.rid { color: var(--muted); font-size: 12.5px; }
+#more { margin-top: 12px; }
+footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 40px; color: var(--muted); font-size: 13px; }
 </style>
 </head>
 <body>
 <header>
-  <div class="bar">
-    <span class="brand">Lucius Open Reader</span>
-    <span class="tag">Read a public tender before you bid.</span>
-    <span class="models" id="models"></span>
-    <button class="theme" id="theme" type="button" aria-label="Switch colour theme">Theme</button>
+  <div class="top">
+    <span class="name">Lucius Open Reader</span>
+    <span class="what">Read a public tender before you bid.</span>
+    <span class="engine" id="engine">NVIDIA Nemotron on Nebius</span>
+    <button class="theme" id="theme" type="button" aria-label="Switch between light and dark">Light / dark</button>
   </div>
 </header>
 <main>
-  <div class="stack">
-    <section aria-labelledby="find-h">
-      <h2 id="find-h">1. Find a tender (optional)</h2>
-      <form id="find-form" class="row">
-        <input type="text" id="query" placeholder="water supply works South Africa" aria-label="Search public tenders">
-        <button class="ghost" id="find-btn" type="submit">Search</button>
+  <div class="col">
+    <section class="sheet" aria-labelledby="find-h">
+      <h2 id="find-h">Find a tender</h2>
+      <p class="sub" id="find-hint">Search the public web with Tavily. PDF documents come first.</p>
+      <form id="find-form" class="inline">
+        <input type="text" id="query" placeholder="sewage pumps, South Africa" aria-label="What are you looking for?">
+        <button class="quiet" id="find-btn" type="submit">Search</button>
       </form>
-      <p class="hint" id="find-hint">Searches the public web with Tavily. PDFs are listed first.</p>
       <ul class="hits" id="hits"></ul>
     </section>
-    <section aria-labelledby="read-h">
-      <h2 id="read-h">2. Read it</h2>
+    <section class="sheet" aria-labelledby="read-h">
+      <h2 id="read-h">Read a tender</h2>
+      <p class="sub">A public PDF link or a file. Nothing is stored after the hour.</p>
       <form id="run-form">
-        <label for="url">Public PDF URL</label>
-        <input type="url" id="url" placeholder="https://example.gov/tender.pdf">
-        <p class="or">or</p>
-        <label for="file">Upload a PDF</label>
+        <label for="url">PDF link</label>
+        <input type="url" id="url" placeholder="https://www.etenders.gov.za/..." autocomplete="off">
+        <p class="alt">or</p>
+        <label for="file">PDF file</label>
         <input type="file" id="file" accept="application/pdf,.pdf">
         <label for="profile">Your company, in a few lines</label>
-        <textarea id="profile" placeholder="Civil works contractor, 40 staff, CIDB grade 7, water and sewer pipelines, ISO 9001, annual turnover USD 12m, works in Gauteng and Limpopo."></textarea>
-        <button class="primary" id="run-btn" type="submit">Run</button>
+        <textarea id="profile" placeholder="What you sell or build, where you work, staff, registrations and certificates, years in business."></textarea>
+        <button class="primary" id="run-btn" type="submit">Read the tender</button>
+        <p class="samples">No tender at hand? <button class="linkish" type="button" id="sample-btn">Fill in a sample</button> <span id="example-or">or <button class="linkish" type="button" id="example-btn">open a finished example</button></span>.</p>
         <div class="error hidden" id="run-error" role="alert"></div>
       </form>
     </section>
   </div>
 
-  <div class="stack" id="right">
-    <section id="progress-box" class="hidden" aria-live="polite">
-      <h2>Progress</h2>
+  <div class="col" id="right">
+    <section class="sheet" id="intro">
+      <h2>What it does</h2>
+      <p class="sub">Give it a tender. It lists every requirement with the tender's own words and the page they are on, then tells you whether to bid.</p>
+      <div class="flow">
+        <div class="step"><b>Find</b><span>Tavily searches the web for tender documents.</span></div>
+        <div class="step"><b>Read</b><span>Nemotron 3 Super reads six pages at a time and quotes each requirement.</span></div>
+        <div class="step"><b>Check</b><span>Every quote is matched to its page. Wrong pages are fixed; misses stay flagged.</span></div>
+        <div class="step"><b>Decide</b><span>Nemotron 3 Ultra judges each mandatory requirement against your company. The call follows from those judgments.</span></div>
+      </div>
+    </section>
+
+    <section class="sheet hidden" id="progress-box" aria-live="polite">
+      <h2 id="progress-h">Reading</h2>
       <div class="counts">
         <div><b id="c-pages">0 / 0</b><span>pages read</span></div>
-        <div><b id="c-reqs">0</b><span>requirements found</span></div>
-        <div><b id="c-ver">-</b><span>quotes verified</span></div>
+        <div><b id="c-reqs">0</b><span>requirements</span></div>
+        <div><b id="c-ver">&ndash;</b><span>quotes found on their page</span></div>
       </div>
-      <div class="progress"><div id="bar"></div></div>
+      <div class="ledger" id="ledger" role="group" aria-label="Pages of the tender"></div>
+      <div class="legend" id="legend">
+        <span><i></i>not read yet</span><span><i class="read"></i>read, nothing found</span><span><i class="l3"></i>requirements (number on the tile)</span><span><i class="blank"></i>scan, no text</span><span><i class="failed"></i>could not be read</span><span><i class="dot"></i>decides the call</span>
+      </div>
       <ul class="log" id="log"></ul>
     </section>
 
-    <section id="verdict-box" class="verdict hidden">
-      <h2>Bid call</h2>
-      <h3 id="v-verdict"></h3>
-      <div class="conf" id="v-conf"></div>
-      <div id="v-reasons"></div>
-      <div id="v-conditions"></div>
+    <section class="sheet hidden" id="call-box">
+      <div class="call">
+        <div class="stamp" id="stamp"><span class="v" id="v-verdict"></span><span class="c" id="v-conf"></span></div>
+        <div>
+          <p class="tender-title" id="v-title"></p>
+          <p class="buyer" id="v-buyer"></p>
+          <div class="fit" id="v-fit"></div>
+          <div class="tally" id="v-tally"></div>
+        </div>
+      </div>
+      <div class="two">
+        <div><h3>Why</h3><ul class="reasons" id="v-reasons"></ul></div>
+        <div id="cond-wrap"><h3>Before you bid</h3><ul class="checklist" id="v-conditions"></ul></div>
+      </div>
       <p class="note" id="v-note"></p>
     </section>
 
-    <section id="deciding-box" class="hidden">
-      <h2>Requirements that decide it</h2>
-      <ul class="deciding" id="deciding"></ul>
+    <section class="sheet hidden" id="deciding-box">
+      <h2>What decides it</h2>
+      <p class="sub" id="deciding-sub"></p>
+      <ul class="decides-list" id="deciding"></ul>
     </section>
 
-    <section id="table-box" class="hidden">
-      <h2>All requirements</h2>
-      <div class="filters">
-        <input type="text" id="f-text" placeholder="Filter text" aria-label="Filter by text">
-        <select id="f-cat" aria-label="Category"><option value="">All categories</option></select>
-        <select id="f-mand" aria-label="Mandatory"><option value="">Mandatory and optional</option><option value="1">Mandatory only</option><option value="0">Optional only</option></select>
-        <select id="f-ver" aria-label="Verified"><option value="">Verified or not</option><option value="1">Verified only</option><option value="0">Unverified only</option></select>
+    <section class="sheet hidden" id="table-box">
+      <div class="tablebar">
+        <h2>Every requirement</h2>
+        <button class="quiet clearpage hidden" id="clear-page" type="button"></button>
       </div>
-      <p class="hint" id="t-count"></p>
+      <div class="filters">
+        <input type="text" id="f-text" placeholder="Search the requirements" aria-label="Search the requirements">
+        <select id="f-cat" aria-label="Category"><option value="">All categories</option></select>
+        <select id="f-mand" aria-label="Mandatory or optional"><option value="">Mandatory and optional</option><option value="1">Mandatory</option><option value="0">Optional</option></select>
+        <select id="f-status" aria-label="Your status"><option value="">Any status</option><option value="fails">Fails</option><option value="not stated">To confirm</option><option value="met">Met</option><option value="routine">Routine</option></select>
+      </div>
+      <p class="meta" id="t-count"></p>
       <div class="tablewrap">
         <table>
-          <thead><tr><th>Page</th><th>Requirement</th><th>Category</th><th>Need</th><th>Quote</th><th>Check</th></tr></thead>
+          <thead><tr><th>Page</th><th>Requirement</th><th>In the tender's words</th><th>Check</th><th>You</th></tr></thead>
           <tbody id="rows"></tbody>
         </table>
       </div>
-    </section>
-
-    <section id="empty-box">
-      <h2>How it works</h2>
-      <p class="note">Give a public tender PDF. NVIDIA Nemotron on Nebius Token Factory reads it six pages at a time and lists every requirement with a verbatim quote and its page. Each quote is then checked against the page text; anything that does not match is kept and flagged, never hidden. Add your company profile to get a bid / no-bid call that cites the requirements behind it.</p>
+      <button class="quiet hidden" id="more" type="button"></button>
     </section>
   </div>
 </main>
+<footer>Open source under Apache 2.0. Calls are a reading aid: always check the tender itself before you bid.</footer>
 <script>
 "use strict";
 const $ = (id) => document.getElementById(id);
@@ -188,7 +302,13 @@ const el = (tag, attrs = {}, ...kids) => {
   for (const k of kids) if (k != null) n.append(k);
   return n;
 };
-let state = { runId: null, reqs: [], source: null };
+const SAMPLE = {
+  url: "https://www.etenders.gov.za/home/Download?blobName=894a6bb9-d68b-4ffb-a667-b6665cbea8ef.pdf&downloadedFileName=TENDER%20DOCUMENT%20-%20SUPPLY%20AND%20DELIVERY%20OF%20WATER%20PUMPS%208-2-1-656.pdf",
+  profile: "Pump supplier based in Johannesburg, South Africa. We supply and service submersible and centrifugal water and sewage pumps, spares and instrumentation to municipalities. CSD registered, B-BBEE level 2, 12 staff, 8 years in business."
+};
+const STATUS = { "fails": ["stop", "fails"], "not stated": ["cond", "to confirm"], "met": ["go", "met"], "routine": ["plain", "routine"] };
+const FIRST_ROWS = 25;
+let state = { runId: null, pdfBase: null, reqs: [], byId: {}, status: {}, page: null, all: false };
 
 (function theme() {
   const root = document.documentElement;
@@ -200,9 +320,16 @@ let state = { runId: null, reqs: [], source: null };
   });
 })();
 
+const shortModel = (m) => {
+  const words = (m || "").replace(/^nvidia\//i, "").replace(/[-_]/g, " ").replace(/\b\d+b a\d+b\b/i, "").trim().split(/\s+/);
+  return words.map(w => /^nemotron$/i.test(w) ? "Nemotron" : /^[a-z]/.test(w) ? w[0].toUpperCase() + w.slice(1) : w).join(" ");
+};
 fetch("/api/health").then(r => r.json()).then(h => {
-  $("models").textContent = (h.fake_llm ? "FAKE LLM (offline demo) | " : "") + "reader " + h.reader_model + " | decider " + h.decider_model;
-  if (!h.find_ready) $("find-hint").textContent = "Search needs TAVILY_API_KEY on the server. You can still paste a PDF URL below.";
+  const e = $("engine"); e.replaceChildren();
+  if (h.fake_llm) e.append(el("span", { class: "chip cond", text: "offline demo, no model calls" }));
+  e.append(el("b", { text: shortModel(h.reader_model) }), " reads, ", el("b", { text: shortModel(h.decider_model) }), " decides");
+  if (!h.find_ready) $("find-hint").textContent = "Search is switched off on this server. Paste a PDF link below instead.";
+  if (!h.example_ready) $("example-or").classList.add("hidden");
 }).catch(() => {});
 
 $("find-form").addEventListener("submit", async (e) => {
@@ -213,55 +340,91 @@ $("find-form").addEventListener("submit", async (e) => {
   try {
     const r = await fetch("/api/find", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
     const data = await r.json();
-    if (!r.ok) throw new Error(data.detail || "Search failed");
+    if (!r.ok) throw new Error(data.detail || "Search failed.");
     const items = data.results.map(h => {
-      const use = el("button", { class: "ghost", type: "button", text: h.is_pdf ? "Read this PDF" : "Use this URL" });
-      use.addEventListener("click", () => { $("url").value = h.url; $("url").focus(); });
+      const use = el("button", { class: "quiet", type: "button", text: h.is_pdf ? "Read this PDF" : "Use this link" });
+      use.addEventListener("click", () => { $("url").value = h.url; $("file").value = ""; $("url").focus(); });
+      let host = ""; try { host = new URL(h.url).hostname; } catch (_) {}
       return el("li", {},
         el("a", { href: h.url, target: "_blank", rel: "noopener noreferrer", text: h.title }),
-        el("div", { class: "meta", text: [h.is_pdf ? "PDF" : "page", h.buyer ? "buyer: " + h.buyer : null, new URL(h.url).hostname].filter(Boolean).join(" | ") }),
+        el("div", { class: "meta", text: [h.is_pdf ? "PDF" : "Web page", h.buyer, host].filter(Boolean).join(" | ") }),
         use);
     });
-    $("hits").replaceChildren(...(items.length ? items : [el("li", { class: "meta", text: "No results." })]));
+    $("hits").replaceChildren(...(items.length ? items : [el("li", { class: "meta", text: "Nothing found. Try other words or a country." })]));
   } catch (err) {
     $("hits").replaceChildren(el("li", { class: "meta", text: String(err.message || err) }));
   } finally { btn.disabled = false; }
 });
 
-function log(msg) { const li = el("li", { text: msg }); $("log").append(li); li.scrollIntoView({ block: "nearest" }); }
+$("sample-btn").addEventListener("click", () => { $("url").value = SAMPLE.url; $("file").value = ""; $("profile").value = SAMPLE.profile; $("run-btn").focus(); });
+$("example-btn").addEventListener("click", async () => {
+  try {
+    const r = await fetch("/api/example");
+    if (!r.ok) throw new Error("The example is not available.");
+    const res = await r.json();
+    state.runId = null; state.pdfBase = res.pdf_url;
+    startView(); drawLedger(res.stats.pages_total, res.stats.empty_page_numbers || []);
+    for (let p = 1; p <= res.stats.pages_total; p++) markTile(p, "read");
+    $("progress-h").textContent = "Read";
+    setCounts(res.stats.pages_read + " / " + res.stats.pages_total, res.stats.requirements, res.stats.verified + " / " + res.stats.requirements);
+    log("Example: a run saved from the live models, shown without calling them again.");
+    render(res);
+  } catch (err) { showError(String(err.message || err)); }
+});
+
+function log(msg) { const li = el("li", { text: msg }); $("log").append(li); $("log").scrollTop = $("log").scrollHeight; }
 function showError(msg) { $("run-error").textContent = msg; $("run-error").classList.remove("hidden"); }
+function setCounts(pages, reqs, ver) { $("c-pages").textContent = pages; $("c-reqs").textContent = reqs; $("c-ver").textContent = ver; }
+
+function startView() {
+  $("run-error").classList.add("hidden");
+  for (const id of ["call-box", "deciding-box", "table-box", "intro"]) $(id).classList.add("hidden");
+  $("progress-box").classList.remove("hidden"); $("log").replaceChildren(); $("progress-h").textContent = "Reading";
+  setCounts("0 / 0", "0", "–"); state.page = null;
+}
+
+function drawLedger(total, blank) {
+  const tiles = [];
+  for (let p = 1; p <= total; p++) {
+    const t = el("button", { class: "tile" + (blank.includes(p) ? " blank" : ""), type: "button", "data-page": String(p), "aria-label": "Page " + p, title: "Page " + p, tabindex: "-1" });
+    t.addEventListener("click", () => { if (t.classList.contains("has")) pickPage(p); });
+    tiles.push(t);
+  }
+  $("ledger").replaceChildren(...tiles);
+}
+function tile(p) { return $("ledger").querySelector('[data-page="' + p + '"]'); }
+function markTile(p, cls) { const t = tile(p); if (t && !t.classList.contains("blank")) t.classList.add(cls); }
 
 $("run-form").addEventListener("submit", async (e) => {
   e.preventDefault();
-  $("run-error").classList.add("hidden");
   const fd = new FormData();
   const file = $("file").files[0];
+  if (!file && !$("url").value.trim()) { showError("Paste a public PDF link or choose a PDF file."); return; }
   if (file) fd.append("file", file); else fd.append("url", $("url").value.trim());
   fd.append("profile", $("profile").value);
-  if (!file && !$("url").value.trim()) { showError("Paste a public PDF URL or upload a PDF."); return; }
-  for (const id of ["verdict-box", "deciding-box", "table-box", "empty-box"]) $(id).classList.add("hidden");
-  $("progress-box").classList.remove("hidden"); $("log").replaceChildren(); $("bar").style.width = "0";
-  $("c-pages").textContent = "0 / 0"; $("c-reqs").textContent = "0"; $("c-ver").textContent = "-";
+  startView(); $("ledger").replaceChildren();
   const btn = $("run-btn"); btn.disabled = true; btn.textContent = "Reading...";
+  const done = () => { btn.disabled = false; btn.textContent = "Read the tender"; };
   try {
     const r = await fetch("/api/runs", { method: "POST", body: fd });
     const data = await r.json();
-    if (!r.ok) throw new Error(data.detail || "Could not start");
-    state.runId = data.run_id;
+    if (!r.ok) throw new Error(data.detail || "Could not start.");
+    state.runId = data.run_id; state.pdfBase = "/api/runs/" + data.run_id + "/pdf";
     const es = new EventSource(data.events);
-    const finish = () => { es.close(); btn.disabled = false; btn.textContent = "Run"; };
+    const finish = () => { es.close(); done(); };
     es.addEventListener("stage", ev => log(JSON.parse(ev.data).message));
     es.addEventListener("pages", ev => {
       const d = JSON.parse(ev.data);
-      $("c-pages").textContent = "0 / " + d.total;
-      log(d.total + " pages, " + d.chunks + " chunks" + (d.empty ? ", " + d.empty + " pages without a text layer (scanned?) cannot be read" : ""));
+      drawLedger(d.total, d.empty_pages || []);
+      setCounts("0 / " + d.total, "0", "–");
+      log(d.total + " pages in " + d.chunks + " parts" + (d.empty ? "; " + d.empty + " pages have no text layer (scans) and cannot be read" : ""));
     });
     es.addEventListener("progress", ev => {
       const d = JSON.parse(ev.data);
-      $("c-pages").textContent = d.pages_read + " / " + d.pages_total;
-      $("c-reqs").textContent = d.requirements;
-      $("bar").style.width = Math.round(100 * d.pages_done / Math.max(1, d.pages_total)) + "%";
-      log(d.ok ? "pages " + d.chunk + " read" : "pages " + d.chunk + " could not be read (the model gave no answer)");
+      const [a, b] = d.chunk.split("-").map(Number);
+      for (let p = a; p <= b; p++) markTile(p, d.ok ? "read" : "failed");
+      setCounts(d.pages_read + " / " + d.pages_total, d.requirements, "–");
+      log(d.ok ? "Pages " + d.chunk + " read" : "Pages " + d.chunk + " could not be read");
     });
     es.addEventListener("verified", ev => {
       const d = JSON.parse(ev.data);
@@ -269,75 +432,139 @@ $("run-form").addEventListener("submit", async (e) => {
       if (d.pages_corrected) log(d.pages_corrected + " page numbers corrected by the quote check");
       if (d.joined) log(d.joined + " quotes join two or three passages of one page; each passage checked word for word");
     });
-    es.addEventListener("result", ev => { render(JSON.parse(ev.data).result); log("Done"); finish(); });
+    es.addEventListener("result", ev => { const res = JSON.parse(ev.data).result; $("progress-h").textContent = "Read"; render(res); log("Done"); finish(); });
     es.addEventListener("error", ev => {
-      if (ev.data) { showError(JSON.parse(ev.data).message); log("Stopped: " + JSON.parse(ev.data).message); }
-      else if (es.readyState === EventSource.CLOSED) showError("Connection lost.");
+      if (ev.data) { const m = JSON.parse(ev.data).message; showError(m); log("Stopped: " + m); }
+      else if (es.readyState === EventSource.CLOSED) showError("The connection to the server was lost.");
       finish();
     });
-  } catch (err) {
-    showError(String(err.message || err)); btn.disabled = false; btn.textContent = "Run";
-  }
+  } catch (err) { showError(String(err.message || err)); done(); }
 });
 
-function pageLink(page) {
-  return el("a", { href: "/api/runs/" + state.runId + "/pdf#page=" + page, target: "_blank", rel: "noopener", text: "p. " + page });
+function pdfHref(page) { return state.pdfBase ? state.pdfBase + "#page=" + page : null; }
+function pageLink(page, cls) {
+  const href = pdfHref(page);
+  return href ? el("a", { class: cls || "", href, target: "_blank", rel: "noopener noreferrer", text: "p. " + page }) : el("span", { class: cls || "", text: "p. " + page });
 }
-function verBadge(r) {
-  if (r.verified && r.joined) return el("span", { class: "badge warn", title: "The quote joins passages of page " + r.page + "; each passage is on the page word for word, but the model skipped words between them", text: "verified, joined" });
-  if (r.verified && r.cited_page) return el("span", { class: "badge warn", title: "Quote found on page " + r.page + ", model cited " + r.cited_page, text: "verified, page fixed" });
-  if (r.verified) return el("span", { class: "badge ok", text: "verified" });
-  return el("span", { class: "badge bad", title: "Quote not found on the page (match " + Math.round(r.match_score * 100) + "%)", text: "unverified" });
+function checkChip(r) {
+  if (r.verified && r.joined) return el("span", { class: "chip cond", title: "The quote joins passages of page " + r.page + ". Each passage is on the page word for word; the model skipped words between them.", text: "found, joined" });
+  if (r.verified && r.cited_page) return el("span", { class: "chip blue", title: "Found on page " + r.page + "; the model said page " + r.cited_page + ".", text: "found, page fixed" });
+  if (r.verified) return el("span", { class: "chip go", text: "found" });
+  return el("span", { class: "chip stop", title: "Not found on the page (" + Math.round(r.match_score * 100) + "% match). Check it in the PDF.", text: "not found" });
+}
+function statusChip(id) {
+  const a = state.status[id];
+  if (!a) return el("span", { class: "meta", text: "" });
+  const [cls, label] = STATUS[a.status];
+  return el("span", { class: "chip " + cls, title: a.why || label, text: label });
 }
 
 function render(res) {
-  state.reqs = res.requirements;
+  state.reqs = res.requirements; state.all = false;
+  state.byId = Object.fromEntries(res.requirements.map(r => [r.id, r]));
   const d = res.decision;
-  $("verdict-box").classList.remove("hidden");
-  const vb = $("verdict-box");
-  vb.classList.remove("bid", "cond", "no");
-  if (d) {
-    vb.classList.add(d.verdict === "bid" ? "bid" : d.verdict === "no bid" ? "no" : "cond");
-    $("v-verdict").textContent = d.verdict;
-    $("v-conf").textContent = "Confidence " + Math.round(d.confidence * 100) + "% | " + d.model + (res.fake_llm ? " (fake)" : "");
-    $("v-reasons").replaceChildren(el("ul", {}, ...d.reasons.map(t => el("li", { text: t }))));
-    $("v-conditions").replaceChildren(...(d.conditions.length ? [el("p", { class: "note", text: "Conditions:" }), el("ul", {}, ...d.conditions.map(t => el("li", { text: t })))] : []));
-    const dec = d.deciding.map(x => el("li", {}, pageLink(x.page), " ", el("span", { class: "badge plain", text: x.id }), " ", verBadge(state.reqs.find(r => r.id === x.id) || { verified: x.verified, match_score: 0 }),
-      el("div", { text: x.requirement }), el("div", { class: "note", text: x.why })));
-    $("deciding").replaceChildren(...dec);
-    $("deciding-box").classList.toggle("hidden", dec.length === 0);
-  } else {
-    $("v-verdict").textContent = "No call yet";
-    $("v-conf").textContent = ""; $("v-reasons").replaceChildren(); $("v-conditions").replaceChildren();
+  state.status = d ? Object.fromEntries(d.assessments.map(a => [a.id, a])) : {};
+  const perPage = {};
+  for (const r of state.reqs) perPage[r.page] = (perPage[r.page] || 0) + 1;
+  for (const t of $("ledger").children) {
+    const p = Number(t.dataset.page), n = perPage[p] || 0;
+    t.classList.remove("l1", "l2", "l3", "has", "decides", "stopper");
+    if (n) { t.classList.add("has", n >= 6 ? "l3" : n >= 3 ? "l2" : "l1"); t.textContent = String(n); t.title = "Page " + p + ": " + n + " requirement" + (n > 1 ? "s" : ""); t.tabIndex = 0; }
   }
   const s = res.stats;
-  const notes = [res.decision_note, s.chunks_failed.length ? s.chunks_failed.length + " chunks failed: " + s.chunks_failed.join("; ") : null,
-    s.malformed_items ? s.malformed_items + " malformed items from the model were not usable" : null,
+  const notes = [res.decision_note,
+    s.chunks_failed.length ? s.chunks_failed.length + " parts could not be read: " + s.chunks_failed.join("; ") : null,
+    s.malformed_items ? s.malformed_items + " items from the model were not usable" : null,
     s.duplicates_merged ? s.duplicates_merged + " exact duplicates merged" : null,
-    d && d.rejected_ids.length ? "The decider cited ids not in the list (ignored): " + d.rejected_ids.join(", ") : null].filter(Boolean);
+    d && d.rejected_ids.length ? "The decider named ids that are not in the list, ignored: " + d.rejected_ids.join(", ") : null].filter(Boolean);
+
+  $("call-box").classList.remove("hidden");
+  const stamp = $("stamp");
+  stamp.classList.remove("go", "stop", "landed"); void stamp.offsetWidth;
+  if (d) {
+    stamp.classList.add(d.verdict === "bid" ? "go" : d.verdict === "no bid" ? "stop" : "cond", "landed");
+    $("v-verdict").textContent = d.verdict === "bid with conditions" ? "Bid, with conditions" : d.verdict === "no bid" ? "No bid" : "Bid";
+    $("v-conf").textContent = "confidence " + Math.round(d.confidence * 100) + "%";
+    const sc = d.scope;
+    $("v-title").textContent = (sc && sc.title) || res.source.split("/").pop().split("?")[0] || "Tender";
+    $("v-buyer").textContent = sc && sc.buyer ? sc.buyer : "";
+    const fit = $("v-fit"); fit.replaceChildren();
+    if (sc) {
+      const [cls, label] = sc.fit === "fits" ? ["go", "your line of work"] : sc.fit === "outside" ? ["stop", "outside your line of work"] : ["cond", "partly your line of work"];
+      fit.append(el("span", { class: "chip " + cls, text: label }), el("span", { text: sc.buys }));
+    }
+    const c = d.counts || {};
+    $("v-tally").replaceChildren(
+      el("span", {}, el("b", { text: String(c["fails"] || 0) }), " fail"),
+      el("span", {}, el("b", { text: String(c["not stated"] || 0) }), " to confirm"),
+      el("span", {}, el("b", { text: String(c["met"] || 0) }), " met"),
+      el("span", {}, el("b", { text: String(c["routine"] || 0) }), " routine forms"));
+    $("v-reasons").replaceChildren(...d.reasons.map(t => el("li", { text: t })));
+    $("v-conditions").replaceChildren(...d.conditions.map(t => el("li", {}, el("span", { text: t }))));
+    $("cond-wrap").classList.toggle("hidden", d.conditions.length === 0);
+    const someEasy = d.deciding.some(x => !x.hard), someHard = d.deciding.some(x => x.hard);
+    const dec = d.deciding.map(x => {
+      const tl = tile(x.page); if (tl) tl.classList.add("decides"), x.status === "fails" && tl.classList.add("stopper");
+      const r = state.byId[x.id] || { verified: x.verified, match_score: 0, page: x.page };
+      return el("li", {},
+        el("div", {}, pageLink(x.page, "pg"), el("div", { class: "rid", text: x.id })),
+        el("div", {},
+          el("div", { class: "req", text: x.requirement }),
+          el("div", { class: "why", text: x.why }),
+          el("div", { class: "tags" }, el("span", { class: "chip " + STATUS[x.status][0], text: STATUS[x.status][1] }),
+            x.hard && someEasy ? el("span", { class: "chip plain", text: "hard to obtain" }) : null, checkChip(r))));
+    });
+    $("deciding").replaceChildren(...dec);
+    $("deciding-sub").textContent = d.unmet_total > dec.length
+      ? "The first " + dec.length + " of " + d.unmet_total + " requirements you fail or must still confirm" + (someHard ? ": failures first, then the hardest to obtain." : ".")
+      : "Requirements you fail or must still confirm" + (someHard ? ": failures first, then the hardest to obtain." : ".");
+    $("deciding-box").classList.toggle("hidden", dec.length === 0);
+  } else {
+    stamp.classList.add("landed");
+    $("v-verdict").textContent = "No call"; $("v-conf").textContent = "add your company";
+    $("v-title").textContent = res.source.split("/").pop().split("?")[0] || "Tender";
+    $("v-buyer").textContent = ""; $("v-fit").replaceChildren(); $("v-tally").replaceChildren();
+    $("v-reasons").replaceChildren(); $("v-conditions").replaceChildren(); $("cond-wrap").classList.add("hidden");
+    $("deciding-box").classList.add("hidden");
+  }
   $("v-note").textContent = notes.join(" | ");
 
   const cats = [...new Set(state.reqs.map(r => r.category))].sort();
-  $("f-cat").replaceChildren(el("option", { value: "", text: "All categories" }), ...cats.map(c => el("option", { value: c, text: c })));
+  $("f-cat").replaceChildren(el("option", { value: "", text: "All categories" }), ...cats.map(c => el("option", { value: c, text: c[0].toUpperCase() + c.slice(1) })));
+  $("f-status").disabled = !d;
   $("table-box").classList.remove("hidden");
   drawTable();
 }
 
-function drawTable() {
-  const t = $("f-text").value.trim().toLowerCase(), c = $("f-cat").value, m = $("f-mand").value, v = $("f-ver").value;
-  const rows = state.reqs.filter(r =>
-    (!t || (r.requirement + " " + r.quote).toLowerCase().includes(t)) && (!c || r.category === c) &&
-    (m === "" || String(+r.mandatory) === m) && (v === "" || String(+r.verified) === v));
-  $("t-count").textContent = rows.length + " of " + state.reqs.length + " requirements";
-  $("rows").replaceChildren(...rows.map(r => el("tr", {},
-    el("td", {}, pageLink(r.page)),
-    el("td", {}, el("div", { text: r.requirement }), el("div", { class: "note", text: r.id })),
-    el("td", { text: r.category }),
-    el("td", {}, el("span", { class: "badge " + (r.mandatory ? "warn" : "plain"), text: r.mandatory ? "mandatory" : "optional" })),
-    el("td", { class: "quote", text: "“" + r.quote + "”" }),
-    el("td", {}, verBadge(r)))));
+function pickPage(p) {
+  state.page = state.page === p ? null : p;
+  for (const t of $("ledger").children) t.classList.toggle("picked", Number(t.dataset.page) === state.page);
+  drawTable();
+  if (state.page) $("table-box").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 }
-for (const id of ["f-text", "f-cat", "f-mand", "f-ver"]) $(id).addEventListener("input", drawTable);
+$("clear-page").addEventListener("click", () => pickPage(state.page));
+
+function drawTable() {
+  const t = $("f-text").value.trim().toLowerCase(), c = $("f-cat").value, m = $("f-mand").value, st = $("f-status").value;
+  const rows = state.reqs.filter(r =>
+    (!state.page || r.page === state.page) &&
+    (!t || (r.requirement + " " + r.quote).toLowerCase().includes(t)) && (!c || r.category === c) &&
+    (m === "" || String(+r.mandatory) === m) && (!st || (state.status[r.id] && state.status[r.id].status === st)));
+  $("clear-page").classList.toggle("hidden", !state.page);
+  $("clear-page").textContent = state.page ? "Page " + state.page + " only. Show all pages" : "";
+  $("t-count").textContent = rows.length + " of " + state.reqs.length + " requirements";
+  const shown = state.all ? rows : rows.slice(0, FIRST_ROWS);
+  $("more").classList.toggle("hidden", shown.length === rows.length);
+  $("more").textContent = "Show all " + rows.length;
+  $("rows").replaceChildren(...shown.map(r => el("tr", {},
+    el("td", {}, pageLink(r.page, "pg")),
+    el("td", {}, el("div", { text: r.requirement }), el("div", { class: "rid", text: r.id + " | " + r.category + " | " + (r.mandatory ? "mandatory" : "optional") })),
+    el("td", { class: "q", text: r.quote }),
+    el("td", {}, checkChip(r)),
+    el("td", {}, statusChip(r.id)))));
+}
+for (const id of ["f-text", "f-cat", "f-mand", "f-status"]) $(id).addEventListener("input", drawTable);
+$("more").addEventListener("click", () => { state.all = true; drawTable(); });
 </script>
 </body>
 </html>

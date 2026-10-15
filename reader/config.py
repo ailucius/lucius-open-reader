@@ -65,6 +65,8 @@ class Settings:
     max_pages: int = 500
     allow_private_urls: bool = False
     verify_threshold: float = 0.8
+    runs_per_hour_per_ip: int = 0  # 0: no limit (set both on a public deployment)
+    runs_per_day: int = 0
 
     @property
     def max_pdf_bytes(self) -> int:
@@ -90,4 +92,6 @@ class Settings:
             max_pages=max(1, _int("READER_MAX_PAGES", 500)),
             allow_private_urls=_flag("READER_ALLOW_PRIVATE_URLS"),
             verify_threshold=_float("READER_VERIFY_THRESHOLD", 0.8),
+            runs_per_hour_per_ip=max(0, _int("READER_RUNS_PER_HOUR_PER_IP", 0)),
+            runs_per_day=max(0, _int("READER_RUNS_PER_DAY", 0)),
         )
