@@ -16,10 +16,22 @@ an IT consultancy.
 
 Built for the Nebius x NVIDIA Global AI Hackathon, track "Best Apps and Agents". Apache-2.0.
 
+**Live demo:** <https://lucius-open-reader-384599766402.europe-west1.run.app> (reads are capped per
+visitor and per day; "Open a finished example" shows a saved live run without calling the models).
+
 ## What it does
 
 1. **Find (optional).** A search such as `water supply works South Africa` goes to the Tavily Search
-   API. Results come back with title, URL, a guessed buyer name when one is visible, and PDF links first.
+   API (advanced depth). Paywalled tender aggregators are excluded; government and multilateral PDFs
+   come first, then other PDFs, then government pages. Each result shows a buyer name when one is
+   visible on it.
+   **Find its documents.** Most results are notice or listing pages, not documents. For those,
+   `docs.py` runs a small agent: Tavily Extract (advanced) reads the page as markdown, Nemotron 3
+   Super (high reasoning, temperature 0.6) picks the links that are this tender's documents (main
+   tender document first) or, if there are none, the pages to open next (at most two levels), and
+   every pick is probed: only links whose first bytes are a PDF are offered to read. A link that is
+   itself a PDF (such as `/download/3001`) is recognised at once. Tavily Map and Crawl returned
+   nothing on the council sites we tried, while Extract read them, hence the step loop.
 2. **Read.** The PDF is downloaded (http/https only, 40 MB cap, timeout, private addresses blocked),
    split into pages with PyMuPDF, grouped into chunks of about 6 pages, and each chunk is sent to the
    reader model (Nemotron 3 Super) with a JSON schema. Chunks run concurrently with a small limit.
@@ -174,7 +186,10 @@ Tests (offline: a fake LLM, a PDF generated in the test with PyMuPDF, mocked HTT
 | `DECIDER_EFFORT` | `low` | decider thinking, same values |
 | `READER_MAX_TOKENS` | `16384` | answer budget per model call (thinking included) |
 | `READER_RUNS_PER_HOUR_PER_IP` | `0` | runs one address may start per hour (`0`: no limit) |
-| `READER_RUNS_PER_DAY` | `0` | runs the server starts per day (`0`: no limit) |
+| `READER_RUNS_PER_DAY` | `0` | runs the server starts per day (`0`: no limit); searches get four times both limits |
+| `FINDER_MODEL` | `nvidia/nemotron-3-super-120b-a12b` | model that picks a page's tender documents |
+| `FINDER_EFFORT` | `high` | its thinking effort |
+| `FINDER_TEMPERATURE` | `0.6` | its temperature (NVIDIA's sampling for Nemotron when it reasons) |
 | `READER_ALLOW_PRIVATE_URLS` | `0` | `1` allows localhost / private hosts (local testing only) |
 
 ## Deploy on Nebius Serverless Endpoints
