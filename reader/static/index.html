@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lucius Open Reader</title>
+<meta name="description" content="Read a public tender before you bid: requirements with verified quotes and a bid / no-bid call.">
+<style>
+:root {
+  --bg: #f6f5f1; --panel: #ffffff; --ink: #1c1d1f; --muted: #5d6066; --line: #dedbd3;
+  --accent: #0f5c4c; --accent-ink: #ffffff; --ok: #1d6b3a; --ok-bg: #e3f1e7;
+  --warn: #8a4b00; --warn-bg: #fbeedb; --bad: #9b1c1c; --bad-bg: #f9e2e2; --focus: #2a6df4;
+  --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141517; --panel: #1c1e21; --ink: #e8e6e1; --muted: #a0a3a9; --line: #33363b;
+    --accent: #4cb39a; --accent-ink: #0d1412; --ok: #7fd19b; --ok-bg: #1d3226;
+    --warn: #f0b467; --warn-bg: #3a2c19; --bad: #f19a9a; --bad-bg: #3b1f1f; --focus: #7aa7ff;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141517; --panel: #1c1e21; --ink: #e8e6e1; --muted: #a0a3a9; --line: #33363b;
+  --accent: #4cb39a; --accent-ink: #0d1412; --ok: #7fd19b; --ok-bg: #1d3226;
+  --warn: #f0b467; --warn-bg: #3a2c19; --bad: #f19a9a; --bad-bg: #3b1f1f; --focus: #7aa7ff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-variant-numeric: tabular-nums; }
+header { border-bottom: 1px solid var(--line); background: var(--panel); }
+.bar { max-width: 1200px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: baseline; gap: 16px; flex-wrap: wrap; }
+.brand { font-weight: 650; letter-spacing: -0.01em; font-size: 17px; }
+.tag { color: var(--muted); }
+.models { margin-left: auto; color: var(--muted); font-size: 12.5px; font-family: var(--mono); }
+main { max-width: 1200px; margin: 0 auto; padding: 20px 16px 48px; display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+@media (max-width: 900px) { main { grid-template-columns: 1fr; } .models { margin-left: 0; } }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 16px; }
+h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin: 0 0 10px; font-weight: 600; }
+label { display: block; font-size: 13px; color: var(--muted); margin: 12px 0 4px; }
+input[type=text], input[type=url], textarea, select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 4px; padding: 8px 10px; }
+textarea { min-height: 110px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 1px; }
+button { font: inherit; border-radius: 4px; padding: 8px 14px; border: 1px solid var(--accent); cursor: pointer; }
+button.primary { background: var(--accent); color: var(--accent-ink); font-weight: 600; width: 100%; margin-top: 14px; }
+button.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: 0.55; cursor: wait; }
+.row { display: flex; gap: 8px; }
+.row > input { flex: 1; }
+.hint { color: var(--muted); font-size: 12.5px; margin: 6px 0 0; }
+.hits { list-style: none; margin: 10px 0 0; padding: 0; max-height: 320px; overflow: auto; }
+.hits li { border-top: 1px solid var(--line); padding: 8px 0; }
+.hits a { color: var(--ink); text-decoration: none; font-weight: 550; word-break: break-word; }
+.hits a:hover { text-decoration: underline; }
+.hits .meta { color: var(--muted); font-size: 12.5px; }
+.hits button { padding: 2px 8px; font-size: 12.5px; margin-top: 4px; }
+.or { text-align: center; color: var(--muted); font-size: 12.5px; margin: 10px 0 0; }
+.stack { display: grid; gap: 16px; align-content: start; }
+.progress { height: 6px; background: var(--line); border-radius: 3px; overflow: hidden; margin: 8px 0; }
+.progress > div { height: 100%; width: 0; background: var(--accent); transition: width 0.2s; }
+.log { font-family: var(--mono); font-size: 12.5px; color: var(--muted); max-height: 140px; overflow: auto; margin: 0; padding: 0; list-style: none; }
+.counts { display: flex; gap: 22px; flex-wrap: wrap; }
+.counts b { display: block; font-size: 22px; font-weight: 650; }
+.counts span { color: var(--muted); font-size: 12.5px; }
+.verdict { border-left: 4px solid var(--accent); }
+.verdict.bid { border-left-color: var(--ok); }
+.verdict.cond { border-left-color: var(--warn); }
+.verdict.no { border-left-color: var(--bad); }
+.verdict h3 { margin: 0; font-size: 24px; text-transform: capitalize; }
+.verdict .conf { color: var(--muted); }
+.verdict ul { margin: 8px 0 0; padding-left: 18px; }
+.badge { display: inline-block; font-size: 12px; padding: 1px 6px; border-radius: 3px; border: 1px solid transparent; white-space: nowrap; }
+.badge.ok { color: var(--ok); background: var(--ok-bg); }
+.badge.warn { color: var(--warn); background: var(--warn-bg); }
+.badge.bad { color: var(--bad); background: var(--bad-bg); }
+.badge.plain { color: var(--muted); border-color: var(--line); }
+.filters { display: grid; grid-template-columns: 1fr 160px 150px 150px; gap: 8px; margin-bottom: 10px; }
+@media (max-width: 700px) { .filters { grid-template-columns: 1fr 1fr; } }
+.tablewrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 6px; border-top: 1px solid var(--line); }
+th { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; border-top: 0; }
+td.quote { color: var(--muted); font-size: 13px; max-width: 420px; }
+td a, .deciding a { color: var(--accent); }
+.deciding { list-style: none; padding: 0; margin: 0; }
+.deciding li { border-top: 1px solid var(--line); padding: 8px 0; }
+.error { color: var(--bad); background: var(--bad-bg); padding: 8px 10px; border-radius: 4px; margin-top: 10px; }
+.note { color: var(--muted); }
+.hidden { display: none !important; }
+.theme { background: transparent; border: 1px solid var(--line); color: var(--muted); padding: 3px 8px; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<header>
+  <div class="bar">
+    <span class="brand">Lucius Open Reader</span>
+    <span class="tag">Read a public tender before you bid.</span>
+    <span class="models" id="models"></span>
+    <button class="theme" id="theme" type="button" aria-label="Switch colour theme">Theme</button>
+  </div>
+</header>
+<main>
+  <div class="stack">
+    <section aria-labelledby="find-h">
+      <h2 id="find-h">1. Find a tender (optional)</h2>
+      <form id="find-form" class="row">
+        <input type="text" id="query" placeholder="water supply works South Africa" aria-label="Search public tenders">
+        <button class="ghost" id="find-btn" type="submit">Search</button>
+      </form>
+      <p class="hint" id="find-hint">Searches the public web with Tavily. PDFs are listed first.</p>
+      <ul class="hits" id="hits"></ul>
+    </section>
+    <section aria-labelledby="read-h">
+      <h2 id="read-h">2. Read it</h2>
+      <form id="run-form">
+        <label for="url">Public PDF URL</label>
+        <input type="url" id="url" placeholder="https://example.gov/tender.pdf">
+        <p class="or">or</p>
+        <label for="file">Upload a PDF</label>
+        <input type="file" id="file" accept="application/pdf,.pdf">
+        <label for="profile">Your company, in a few lines</label>
+        <textarea id="profile" placeholder="Civil works contractor, 40 staff, CIDB grade 7, water and sewer pipelines, ISO 9001, annual turnover USD 12m, works in Gauteng and Limpopo."></textarea>
+        <button class="primary" id="run-btn" type="submit">Run</button>
+        <div class="error hidden" id="run-error" role="alert"></div>
+      </form>
+    </section>
+  </div>
+
+  <div class="stack" id="right">
+    <section id="progress-box" class="hidden" aria-live="polite">
+      <h2>Progress</h2>
+      <div class="counts">
+        <div><b id="c-pages">0 / 0</b><span>pages read</span></div>
+        <div><b id="c-reqs">0</b><span>requirements found</span></div>
+        <div><b id="c-ver">-</b><span>quotes verified</span></div>
+      </div>
+      <div class="progress"><div id="bar"></div></div>
+      <ul class="log" id="log"></ul>
+    </section>
+
+    <section id="verdict-box" class="verdict hidden">
+      <h2>Bid call</h2>
+      <h3 id="v-verdict"></h3>
+      <div class="conf" id="v-conf"></div>
+      <div id="v-reasons"></div>
+      <div id="v-conditions"></div>
+      <p class="note" id="v-note"></p>
+    </section>
+
+    <section id="deciding-box" class="hidden">
+      <h2>Requirements that decide it</h2>
+      <ul class="deciding" id="deciding"></ul>
+    </section>
+
+    <section id="table-box" class="hidden">
+      <h2>All requirements</h2>
+      <div class="filters">
+        <input type="text" id="f-text" placeholder="Filter text" aria-label="Filter by text">
+        <select id="f-cat" aria-label="Category"><option value="">All categories</option></select>
+        <select id="f-mand" aria-label="Mandatory"><option value="">Mandatory and optional</option><option value="1">Mandatory only</option><option value="0">Optional only</option></select>
+        <select id="f-ver" aria-label="Verified"><option value="">Verified or not</option><option value="1">Verified only</option><option value="0">Unverified only</option></select>
+      </div>
+      <p class="hint" id="t-count"></p>
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>Page</th><th>Requirement</th><th>Category</th><th>Need</th><th>Quote</th><th>Check</th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="empty-box">
+      <h2>How it works</h2>
+      <p class="note">Give a public tender PDF. NVIDIA Nemotron on Nebius Token Factory reads it six pages at a time and lists every requirement with a verbatim quote and its page. Each quote is then checked against the page text; anything that does not match is kept and flagged, never hidden. Add your company profile to get a bid / no-bid call that cites the requirements behind it.</p>
+    </section>
+  </div>
+</main>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const el = (tag, attrs = {}, ...kids) => {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs)) {
+    if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+  }
+  for (const k of kids) if (k != null) n.append(k);
+  return n;
+};
+let state = { runId: null, reqs: [], source: null };
+
+(function theme() {
+  const root = document.documentElement;
+  try { const t = localStorage.getItem("theme"); if (t) root.dataset.theme = t; } catch (_) {}
+  $("theme").addEventListener("click", () => {
+    const dark = root.dataset.theme ? root.dataset.theme === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+    root.dataset.theme = dark ? "light" : "dark";
+    try { localStorage.setItem("theme", root.dataset.theme); } catch (_) {}
+  });
+})();
+
+fetch("/api/health").then(r => r.json()).then(h => {
+  $("models").textContent = (h.fake_llm ? "FAKE LLM (offline demo) | " : "") + "reader " + h.reader_model + " | decider " + h.decider_model;
+  if (!h.find_ready) $("find-hint").textContent = "Search needs TAVILY_API_KEY on the server. You can still paste a PDF URL below.";
+}).catch(() => {});
+
+$("find-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const q = $("query").value.trim();
+  if (!q) return;
+  const btn = $("find-btn"); btn.disabled = true; $("hits").replaceChildren(el("li", { class: "meta", text: "Searching..." }));
+  try {
+    const r = await fetch("/api/find", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ query: q }) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Search failed");
+    const items = data.results.map(h => {
+      const use = el("button", { class: "ghost", type: "button", text: h.is_pdf ? "Read this PDF" : "Use this URL" });
+      use.addEventListener("click", () => { $("url").value = h.url; $("url").focus(); });
+      return el("li", {},
+        el("a", { href: h.url, target: "_blank", rel: "noopener noreferrer", text: h.title }),
+        el("div", { class: "meta", text: [h.is_pdf ? "PDF" : "page", h.buyer ? "buyer: " + h.buyer : null, new URL(h.url).hostname].filter(Boolean).join(" | ") }),
+        use);
+    });
+    $("hits").replaceChildren(...(items.length ? items : [el("li", { class: "meta", text: "No results." })]));
+  } catch (err) {
+    $("hits").replaceChildren(el("li", { class: "meta", text: String(err.message || err) }));
+  } finally { btn.disabled = false; }
+});
+
+function log(msg) { const li = el("li", { text: msg }); $("log").append(li); li.scrollIntoView({ block: "nearest" }); }
+function showError(msg) { $("run-error").textContent = msg; $("run-error").classList.remove("hidden"); }
+
+$("run-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  $("run-error").classList.add("hidden");
+  const fd = new FormData();
+  const file = $("file").files[0];
+  if (file) fd.append("file", file); else fd.append("url", $("url").value.trim());
+  fd.append("profile", $("profile").value);
+  if (!file && !$("url").value.trim()) { showError("Paste a public PDF URL or upload a PDF."); return; }
+  for (const id of ["verdict-box", "deciding-box", "table-box", "empty-box"]) $(id).classList.add("hidden");
+  $("progress-box").classList.remove("hidden"); $("log").replaceChildren(); $("bar").style.width = "0";
+  $("c-pages").textContent = "0 / 0"; $("c-reqs").textContent = "0"; $("c-ver").textContent = "-";
+  const btn = $("run-btn"); btn.disabled = true; btn.textContent = "Reading...";
+  try {
+    const r = await fetch("/api/runs", { method: "POST", body: fd });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Could not start");
+    state.runId = data.run_id;
+    const es = new EventSource(data.events);
+    const finish = () => { es.close(); btn.disabled = false; btn.textContent = "Run"; };
+    es.addEventListener("stage", ev => log(JSON.parse(ev.data).message));
+    es.addEventListener("pages", ev => {
+      const d = JSON.parse(ev.data);
+      $("c-pages").textContent = "0 / " + d.total;
+      log(d.total + " pages, " + d.chunks + " chunks" + (d.empty ? ", " + d.empty + " pages without a text layer (scanned?) cannot be read" : ""));
+    });
+    es.addEventListener("progress", ev => {
+      const d = JSON.parse(ev.data);
+      $("c-pages").textContent = d.pages_read + " / " + d.pages_total;
+      $("c-reqs").textContent = d.requirements;
+      $("bar").style.width = Math.round(100 * d.pages_read / Math.max(1, d.pages_total)) + "%";
+      log("pages " + d.chunk + " read");
+    });
+    es.addEventListener("verified", ev => {
+      const d = JSON.parse(ev.data);
+      $("c-ver").textContent = d.verified + " / " + (d.verified + d.unverified);
+      if (d.pages_corrected) log(d.pages_corrected + " page numbers corrected by the quote check");
+    });
+    es.addEventListener("result", ev => { render(JSON.parse(ev.data).result); log("Done"); finish(); });
+    es.addEventListener("error", ev => {
+      if (ev.data) { showError(JSON.parse(ev.data).message); log("Stopped: " + JSON.parse(ev.data).message); }
+      else if (es.readyState === EventSource.CLOSED) showError("Connection lost.");
+      finish();
+    });
+  } catch (err) {
+    showError(String(err.message || err)); btn.disabled = false; btn.textContent = "Run";
+  }
+});
+
+function pageLink(page) {
+  return el("a", { href: "/api/runs/" + state.runId + "/pdf#page=" + page, target: "_blank", rel: "noopener", text: "p. " + page });
+}
+function verBadge(r) {
+  if (r.verified && r.cited_page) return el("span", { class: "badge warn", title: "Quote found on page " + r.page + ", model cited " + r.cited_page, text: "verified, page fixed" });
+  if (r.verified) return el("span", { class: "badge ok", text: "verified" });
+  return el("span", { class: "badge bad", title: "Quote not found on the page (match " + Math.round(r.match_score * 100) + "%)", text: "unverified" });
+}
+
+function render(res) {
+  state.reqs = res.requirements;
+  const d = res.decision;
+  $("verdict-box").classList.remove("hidden");
+  const vb = $("verdict-box");
+  vb.classList.remove("bid", "cond", "no");
+  if (d) {
+    vb.classList.add(d.verdict === "bid" ? "bid" : d.verdict === "no bid" ? "no" : "cond");
+    $("v-verdict").textContent = d.verdict;
+    $("v-conf").textContent = "Confidence " + Math.round(d.confidence * 100) + "% | " + d.model + (res.fake_llm ? " (fake)" : "");
+    $("v-reasons").replaceChildren(el("ul", {}, ...d.reasons.map(t => el("li", { text: t }))));
+    $("v-conditions").replaceChildren(...(d.conditions.length ? [el("p", { class: "note", text: "Conditions:" }), el("ul", {}, ...d.conditions.map(t => el("li", { text: t })))] : []));
+    const dec = d.deciding.map(x => el("li", {}, pageLink(x.page), " ", el("span", { class: "badge plain", text: x.id }), " ", verBadge(state.reqs.find(r => r.id === x.id) || { verified: x.verified, match_score: 0 }),
+      el("div", { text: x.requirement }), el("div", { class: "note", text: x.why })));
+    $("deciding").replaceChildren(...dec);
+    $("deciding-box").classList.toggle("hidden", dec.length === 0);
+  } else {
+    $("v-verdict").textContent = "No call yet";
+    $("v-conf").textContent = ""; $("v-reasons").replaceChildren(); $("v-conditions").replaceChildren();
+  }
+  const s = res.stats;
+  const notes = [res.decision_note, s.chunks_failed.length ? s.chunks_failed.length + " chunks failed: " + s.chunks_failed.join("; ") : null,
+    s.malformed_items ? s.malformed_items + " malformed items from the model were not usable" : null,
+    s.duplicates_merged ? s.duplicates_merged + " exact duplicates merged" : null,
+    d && d.rejected_ids.length ? "The decider cited ids not in the list (ignored): " + d.rejected_ids.join(", ") : null].filter(Boolean);
+  $("v-note").textContent = notes.join(" | ");
+
+  const cats = [...new Set(state.reqs.map(r => r.category))].sort();
+  $("f-cat").replaceChildren(el("option", { value: "", text: "All categories" }), ...cats.map(c => el("option", { value: c, text: c })));
+  $("table-box").classList.remove("hidden");
+  drawTable();
+}
+
+function drawTable() {
+  const t = $("f-text").value.trim().toLowerCase(), c = $("f-cat").value, m = $("f-mand").value, v = $("f-ver").value;
+  const rows = state.reqs.filter(r =>
+    (!t || (r.requirement + " " + r.quote).toLowerCase().includes(t)) && (!c || r.category === c) &&
+    (m === "" || String(+r.mandatory) === m) && (v === "" || String(+r.verified) === v));
+  $("t-count").textContent = rows.length + " of " + state.reqs.length + " requirements";
+  $("rows").replaceChildren(...rows.map(r => el("tr", {},
+    el("td", {}, pageLink(r.page)),
+    el("td", {}, el("div", { text: r.requirement }), el("div", { class: "note", text: r.id })),
+    el("td", { text: r.category }),
+    el("td", {}, el("span", { class: "badge " + (r.mandatory ? "warn" : "plain"), text: r.mandatory ? "mandatory" : "optional" })),
+    el("td", { class: "quote", text: "“" + r.quote + "”" }),
+    el("td", {}, verBadge(r)))));
+}
+for (const id of ["f-text", "f-cat", "f-mand", "f-ver"]) $(id).addEventListener("input", drawTable);
+</script>
+</body>
+</html>

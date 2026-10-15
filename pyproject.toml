@@ -1,0 +1,11 @@
+[project]
+name = "lucius-open-reader"
+version = "0.1.0"
+description = "Read a public tender before you bid: requirements with verified quotes and a bid / no-bid call, using NVIDIA Nemotron on Nebius Token Factory."
+license = "Apache-2.0"
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+pythonpath = ["."]
