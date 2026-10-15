@@ -35,6 +35,7 @@ class LLMClient(Protocol):
         schema_name: str,
         schema: dict[str, Any],
         effort: str | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]: ...
 
 
@@ -94,10 +95,11 @@ class NebiusClient:
         schema_name: str,
         schema: dict[str, Any],
         effort: str | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]:
         body: dict[str, Any] = {
             "model": model,
-            "temperature": 0.0,
+            "temperature": temperature or 0.0,
             "max_tokens": self._max_tokens,
             "messages": [
                 {"role": "system", "content": system},
@@ -108,6 +110,8 @@ class NebiusClient:
                 "json_schema": {"name": schema_name, "schema": schema, "strict": True},
             },
         }
+        if temperature:
+            body["top_p"] = 0.95  # NVIDIA's sampling for Nemotron when it thinks
         _set_thinking(body, effort)
         resp = await self._post(body)
         if resp.status_code in (400, 422):
@@ -190,6 +194,7 @@ class FakeLLM:
         schema_name: str,
         schema: dict[str, Any],
         effort: str | None = None,
+        temperature: float | None = None,
     ) -> dict[str, Any]:
         self.calls.append({"model": model, "schema_name": schema_name, "user": user, "effort": effort})
         if schema_name == "requirements":
@@ -198,6 +203,9 @@ class FakeLLM:
             return {"title": "", "buyer": "", "buys": "The work described on the first pages.", "fit": "fits", "why": "Fake decider."}
         if schema_name == "assessments":
             return self._assess(user)
+        if schema_name == "links":
+            ids = re.findall(r"^\[(L\d+)\] file \| ", user, re.M)
+            return {"documents": [{"id": i, "why": "Fake finder: the address looks like a file."} for i in ids[:3]], "open_next": []}
         if schema_name == "summary":
             return {
                 "confidence": 0.5,

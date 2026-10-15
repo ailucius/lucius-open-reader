@@ -86,3 +86,47 @@ async def fetch_pdf(
                 check_pdf_bytes(data)
                 return data
         raise FetchError("too many redirects")
+
+
+async def probe_document(
+    url: str,
+    settings: Settings,
+    transport: httpx.AsyncBaseTransport | None = None,
+) -> tuple[bool, str, int | None]:
+    """Read the first 2 KB at `url` (same address checks as fetch_pdf).
+
+    Returns (is a PDF, final URL after redirects, total size in bytes when the server says).
+    A link's name says little: "/download/3001" can be a PDF and "tender.pdf" an HTML error page.
+    """
+    timeout = httpx.Timeout(20.0, connect=10.0)
+    async with httpx.AsyncClient(
+        timeout=timeout,
+        follow_redirects=False,
+        transport=transport,
+        headers={"User-Agent": USER_AGENT, "Accept": "application/pdf,*/*", "Range": "bytes=0-2047"},
+    ) as client:
+        current = url
+        for _ in range(MAX_REDIRECTS + 1):
+            await _assert_public_host(current, settings.allow_private_urls)
+            async with client.stream("GET", current) as resp:
+                if resp.is_redirect:
+                    location = resp.headers.get("location")
+                    if not location:
+                        raise FetchError("redirect without a location")
+                    current = urljoin(current, location)
+                    continue
+                if resp.status_code >= 400:
+                    raise FetchError(f"HTTP {resp.status_code}")
+                head = bytearray()
+                async for part in resp.aiter_bytes():
+                    head.extend(part)
+                    if len(head) >= 2048:
+                        break
+                size: int | None = None
+                content_range = resp.headers.get("content-range", "")
+                if "/" in content_range and content_range.rsplit("/", 1)[1].isdigit():
+                    size = int(content_range.rsplit("/", 1)[1])
+                elif resp.status_code == 200 and (resp.headers.get("content-length") or "").isdigit():
+                    size = int(resp.headers["content-length"])
+                return b"%PDF-" in bytes(head[:1024]), current, size
+        raise FetchError("too many redirects")

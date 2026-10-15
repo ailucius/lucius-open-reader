@@ -97,3 +97,10 @@ def test_example_route_serves_the_saved_run_when_present() -> None:
             assert body["requirements"] and body["decision"]["verdict"] and body["pdf_url"].startswith("https://")
         else:
             assert resp.status_code == 404
+
+
+def test_documents_route_needs_a_search_key_and_a_web_address() -> None:
+    app = create_app(Settings(fake_llm=True))
+    with TestClient(app) as client:
+        assert client.post("/api/documents", json={"url": "ftp://x/y"}).status_code == 400
+        assert client.post("/api/documents", json={"url": "https://buyer.example/tenders/"}).status_code == 503

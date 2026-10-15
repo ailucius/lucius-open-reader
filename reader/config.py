@@ -17,6 +17,7 @@ DEFAULT_DECIDER_EFFORT = "low"
 EFFORTS = ("none", "low", "medium", "high")
 # Verified 2026-10-15 against https://docs.tavily.com/documentation/api-reference/endpoint/search
 TAVILY_SEARCH_URL = "https://api.tavily.com/search"
+TAVILY_EXTRACT_URL = "https://api.tavily.com/extract"
 
 
 def _flag(name: str, default: bool = False) -> bool:
@@ -55,6 +56,9 @@ class Settings:
     reader_effort: str | None = DEFAULT_READER_EFFORT
     decider_effort: str | None = DEFAULT_DECIDER_EFFORT
     max_tokens: int = 16384
+    finder_model: str = DEFAULT_READER_MODEL
+    finder_effort: str | None = "high"
+    finder_temperature: float = 0.6
     tavily_api_key: str | None = None
     fake_llm: bool = False
     concurrency: int = 4
@@ -82,6 +86,9 @@ class Settings:
             reader_effort=_effort("READER_EFFORT", DEFAULT_READER_EFFORT),
             decider_effort=_effort("DECIDER_EFFORT", DEFAULT_DECIDER_EFFORT),
             max_tokens=max(1024, _int("READER_MAX_TOKENS", 16384)),
+            finder_model=os.environ.get("FINDER_MODEL") or DEFAULT_READER_MODEL,
+            finder_effort=_effort("FINDER_EFFORT", "high"),
+            finder_temperature=_float("FINDER_TEMPERATURE", 0.6),
             tavily_api_key=os.environ.get("TAVILY_API_KEY") or None,
             fake_llm=_flag("READER_FAKE_LLM"),
             concurrency=max(1, _int("READER_CONCURRENCY", 4)),

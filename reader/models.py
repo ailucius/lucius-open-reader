@@ -110,4 +110,5 @@ class SearchHit(BaseModel):
     buyer: str | None = None
     snippet: str = ""
     is_pdf: bool = False
+    official: bool = False  # a government or multilateral domain
     score: float | None = None

@@ -92,7 +92,37 @@ async def test_tavily_needs_a_key() -> None:
 
 def test_guess_buyer_municipality() -> None:
     assert guess_buyer("Tender from Ekurhuleni Metropolitan Municipality for pipes") == "Ekurhuleni Metropolitan Municipality"
+    assert guess_buyer("T-22/2022 THREE YEARS Knysna Municipality repair of pumps") == "Knysna Municipality"
+    assert guess_buyer("Sewer Pump Stations In. Local Municipality") is None  # only generic words
     assert guess_buyer("nothing here") is None
+
+
+def test_official_and_aggregator_domains() -> None:
+    from reader.find import is_aggregator, is_official
+
+    assert is_official("https://www.etenders.gov.za/home/Download?x=1")
+    assert is_official("https://cms.tacoma.gov/purchasing/a.pdf")
+    assert is_official("https://ted.europa.eu/en/notice/1")
+    assert is_official("https://www.find-tender.service.gov.uk/Notice/1")
+    assert not is_official("https://www.knysna.co.za/a.pdf")
+    assert is_aggregator("https://www.tendersontime.com/south-africa-tenders/")
+    assert not is_aggregator("https://www.knysna.gov.za/tenders/")
+
+
+async def test_search_excludes_aggregators_and_puts_official_pdfs_first() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        assert "tendersontime.com" in body["exclude_domains"] and body["search_depth"] == "advanced"
+        return httpx.Response(200, json={"results": [
+            {"title": "aggregator", "url": "https://www.globaltenders.com/za/pumps", "content": "", "score": 0.99},
+            {"title": "page", "url": "https://www.capetown.gov.za/tenders", "content": "", "score": 0.95},
+            {"title": "other pdf", "url": "https://consultant.example/t.pdf", "content": "", "score": 0.9},
+            {"title": "official pdf", "url": "https://www.knysna.gov.za/t.pdf", "content": "", "score": 0.4},
+        ]})
+
+    hits = await search_tenders("pumps", "tvly-test", transport=httpx.MockTransport(handler))
+    assert [h.title for h in hits] == ["official pdf", "other pdf", "page"]
+    assert [h.official for h in hits] == [True, False, True]
 
 
 def test_parse_json_content_handles_think_and_fences() -> None:

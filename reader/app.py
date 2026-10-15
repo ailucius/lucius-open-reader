@@ -17,6 +17,8 @@ from pydantic import BaseModel
 
 from . import __version__
 from .config import Settings
+from .docs import find_documents
+from .fetch import FetchError
 from .find import FindError, search_tenders
 from .llm import LLMClient, get_client
 from .pipeline import Event, run_reader
@@ -49,11 +51,33 @@ class FindRequest(BaseModel):
     max_results: int = 10
 
 
+class DocumentsRequest(BaseModel):
+    url: str
+    query: str = ""
+
+
 def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -> FastAPI:
     settings = settings or Settings.from_env()
     app = FastAPI(title="Lucius Open Reader", version=__version__)
     runs: dict[str, Run] = {}
     started: list[tuple[float, str]] = []  # (time, client address) of runs started, for the limits
+    searched: list[tuple[float, str]] = []  # searches and document finds (they spend Tavily and model credit)
+
+    def client_address(request: Request) -> str:
+        forwarded = request.headers.get("x-forwarded-for", "")
+        return forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
+
+    def check_search_limits(address: str) -> None:
+        """Searches are cheaper than runs: four times the run limits, when those are set."""
+        now = time.time()
+        searched[:] = [(t, a) for t, a in searched if now - t < 86400]
+        if settings.runs_per_day and len(searched) >= 4 * settings.runs_per_day:
+            raise HTTPException(429, "This demo has used its searches for today. Paste a PDF link instead.")
+        if settings.runs_per_hour_per_ip:
+            recent = sum(1 for t, a in searched if a == address and now - t < 3600)
+            if recent >= 4 * settings.runs_per_hour_per_ip:
+                raise HTTPException(429, "You have searched the most allowed in an hour on this demo. Try again later.")
+        searched.append((now, address))
 
     def check_limits(address: str) -> None:
         now = time.time()
@@ -105,12 +129,30 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
         return FileResponse(EXAMPLE, media_type="application/json")
 
     @app.post("/api/find")
-    async def find(req: FindRequest) -> dict[str, Any]:
+    async def find(req: FindRequest, request: Request) -> dict[str, Any]:
+        if settings.tavily_api_key:
+            check_search_limits(client_address(request))
         try:
             hits = await search_tenders(req.query, settings.tavily_api_key, req.max_results)
         except FindError as exc:
             raise HTTPException(503 if "not set" in str(exc) else 502, str(exc)) from exc
         return {"query": req.query, "results": [h.model_dump() for h in hits]}
+
+    @app.post("/api/documents")
+    async def documents(req: DocumentsRequest, request: Request) -> dict[str, Any]:
+        if not req.url.strip().startswith(("http://", "https://")):
+            raise HTTPException(400, "only http and https URLs are allowed")
+        if not settings.tavily_api_key:
+            raise HTTPException(503, "TAVILY_API_KEY is not set")
+        llm_client = client()
+        check_search_limits(client_address(request))
+        try:
+            found = await find_documents(req.url.strip(), req.query[:300], settings, llm_client)
+        except FindError as exc:
+            raise HTTPException(502, str(exc)) from exc
+        except FetchError as exc:
+            raise HTTPException(400, str(exc)) from exc
+        return found.model_dump()
 
     @app.post("/api/runs")
     async def start_run(
@@ -134,8 +176,7 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
             raise HTTPException(400, "give a PDF URL or upload a PDF")
         if len(profile) > 4000:
             raise HTTPException(400, "profile is longer than 4000 characters")
-        forwarded = request.headers.get("x-forwarded-for", "")
-        check_limits(forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown"))
+        check_limits(client_address(request))
 
         prune()
         run = Run(id=uuid.uuid4().hex)

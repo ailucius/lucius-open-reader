@@ -79,6 +79,11 @@ button:disabled { opacity: 0.55; cursor: progress; }
 .hits a:hover { text-decoration: underline; }
 .meta { color: var(--muted); font-size: 13px; }
 .hits button { font-size: 13px; padding: 4px 10px; margin-top: 6px; }
+.hit-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.docs { list-style: none; margin: 8px 0 0; padding: 8px 0 0 12px; border-left: 2px solid var(--line); }
+.docs li { border: 0; padding: 4px 0; }
+.docs .meta a { color: var(--muted); }
+.working { color: var(--muted); font-size: 13px; margin-top: 6px; }
 
 /* the flow, before a run */
 .flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0; margin-top: 6px; }
@@ -311,6 +316,7 @@ const SAMPLE = {
 };
 const STATUS = { "fails": ["stop", "fails"], "not stated": ["cond", "to confirm"], "met": ["go", "met"], "routine": ["plain", "routine"] };
 const FIRST_ROWS = 25;
+let findReady = false;
 let state = { runId: null, pdfBase: null, reqs: [], byId: {}, status: {}, page: null, all: false };
 
 (function theme() {
@@ -331,7 +337,9 @@ fetch("/api/health").then(r => r.json()).then(h => {
   const e = $("engine"); e.replaceChildren();
   if (h.fake_llm) e.append(el("span", { class: "chip cond", text: "offline demo, no model calls" }));
   e.append(el("b", { text: shortModel(h.reader_model) }), " reads, ", el("b", { text: shortModel(h.decider_model) }), " decides");
+  findReady = !!h.find_ready;
   if (!h.find_ready) $("find-hint").textContent = "Search is switched off on this server. Paste a PDF link below instead.";
+  else $("find-hint").textContent = "Search the public web with Tavily. Government PDFs come first; for a web page, Lucius can find its tender documents.";
   if (!h.example_ready) $("example-or").classList.add("hidden");
 }).catch(() => {});
 
@@ -345,19 +353,58 @@ $("find-form").addEventListener("submit", async (e) => {
     const data = await r.json();
     if (!r.ok) throw new Error(data.detail || "Search failed.");
     const items = data.results.map(h => {
-      const use = el("button", { class: "quiet", type: "button", text: h.is_pdf ? "Read this PDF" : "Use this link" });
-      use.addEventListener("click", () => { $("url").value = h.url; $("file").value = ""; $("url").focus(); });
       let host = ""; try { host = new URL(h.url).hostname; } catch (_) {}
+      const box = el("div");
+      const actions = el("div", { class: "hit-actions" });
+      if (h.is_pdf) {
+        const use = el("button", { class: "quiet", type: "button", text: "Read this PDF" });
+        use.addEventListener("click", () => useDocument(h.url));
+        actions.append(use);
+      } else {
+        const look = el("button", { class: "quiet", type: "button", text: "Find its documents" });
+        look.addEventListener("click", () => findDocuments(h.url, q, box, look));
+        actions.append(look);
+      }
       return el("li", {},
         el("a", { href: h.url, target: "_blank", rel: "noopener noreferrer", text: h.title }),
-        el("div", { class: "meta", text: [h.is_pdf ? "PDF" : "Web page", h.buyer, host].filter(Boolean).join(" | ") }),
-        use);
+        el("div", { class: "meta", text: [h.is_pdf ? "PDF" : "Web page", h.official ? "government site" : null, h.buyer, host].filter(Boolean).join(" | ") }),
+        actions, box);
     });
     $("hits").replaceChildren(...(items.length ? items : [el("li", { class: "meta", text: "Nothing found. Try other words or a country." })]));
   } catch (err) {
     $("hits").replaceChildren(el("li", { class: "meta", text: String(err.message || err) }));
   } finally { btn.disabled = false; }
 });
+
+function useDocument(url) { $("url").value = url; $("file").value = ""; $("run-error").classList.add("hidden"); $("url").focus(); }
+const kb = (n) => n == null ? null : n >= 1048576 ? (n / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(n / 1024)) + " KB";
+
+async function findDocuments(url, query, box, btn) {
+  if (btn) btn.disabled = true;
+  box.replaceChildren(el("div", { class: "working", text: "Reading the page with Tavily; Nemotron picks the tender documents and checks each link. About 10 to 50 seconds." }));
+  try {
+    const r = await fetch("/api/documents", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url, query }) });
+    const data = await r.json();
+    if (!r.ok) throw new Error(data.detail || "Could not look through that page.");
+    const pdfs = data.documents.filter(d => d.is_pdf), others = data.documents.filter(d => !d.is_pdf);
+    const rows = pdfs.map(d => {
+      const read = el("button", { class: "quiet", type: "button", text: "Read this PDF" });
+      read.addEventListener("click", () => useDocument(d.url));
+      return el("li", {},
+        el("a", { href: d.url, target: "_blank", rel: "noopener noreferrer", text: d.title }),
+        el("div", { class: "meta" }, [kb(d.size), d.why].filter(Boolean).join(" | ")),
+        read);
+    });
+    for (const d of others) rows.push(el("li", {}, el("a", { href: d.url, target: "_blank", rel: "noopener noreferrer", text: d.title }), el("div", { class: "meta", text: "Not a PDF, so it cannot be read here." })));
+    const pages = data.pages_read.length;
+    const head = el("div", { class: "working", text: pdfs.length
+      ? pdfs.length + " tender document" + (pdfs.length > 1 ? "s" : "") + " found" + (pages > 1 ? " across " + pages + " pages" : "") + "."
+      : (data.note || "No tender documents found.") });
+    box.replaceChildren(head, ...(rows.length ? [el("ul", { class: "docs" }, ...rows)] : []));
+  } catch (err) {
+    box.replaceChildren(el("div", { class: "working", text: String(err.message || err) }));
+  } finally { if (btn) btn.disabled = false; }
+}
 
 $("sample-btn").addEventListener("click", () => { $("url").value = SAMPLE.url; $("file").value = ""; $("profile").value = SAMPLE.profile; $("run-btn").focus(); });
 $("example-btn").addEventListener("click", async () => {
@@ -438,7 +485,16 @@ $("run-form").addEventListener("submit", async (e) => {
     });
     es.addEventListener("result", ev => { const res = JSON.parse(ev.data).result; $("progress-h").textContent = "Read"; render(res); log("Done"); finish(); });
     es.addEventListener("error", ev => {
-      if (ev.data) { const m = JSON.parse(ev.data).message; showError(m); log("Stopped: " + m); }
+      if (ev.data) {
+        const m = JSON.parse(ev.data).message; showError(m); log("Stopped: " + m);
+        const pasted = $("url").value.trim();
+        if (/not a PDF/i.test(m) && pasted && findReady) {
+          const box = el("div"), look = el("button", { class: "linkish", type: "button", text: "Find the tender documents on that page" });
+          // what the company does tells the finder which of the page's tenders to pick
+          look.addEventListener("click", () => findDocuments(pasted, "tenders for this company: " + $("profile").value.trim().slice(0, 280), box, look));
+          $("run-error").replaceChildren(el("div", { text: "That link is a web page, not a PDF. " }, look), box);
+        }
+      }
       else if (es.readyState === EventSource.CLOSED) showError("The connection to the server was lost.");
       finish();
     });
