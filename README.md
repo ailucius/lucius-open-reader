@@ -2,11 +2,17 @@
 
 Read a public tender before you bid.
 
-Give it a public tender PDF (or search for one). NVIDIA Nemotron on Nebius Token Factory reads the
-document six pages at a time and lists every requirement with a verbatim quote and its page. Every
+Give it a public tender PDF (or search for one). NVIDIA Nemotron 3 Super on Nebius Token Factory reads
+the document six pages at a time and lists every requirement with a verbatim quote and its page. Every
 quote is then checked against the page text, so you can see which items are grounded and which are
-not. Add a few lines about your company and a second Nemotron model makes a bid / no-bid call that
-cites the requirements behind it.
+not. Add a few lines about your company and Nemotron 3 Ultra judges each mandatory requirement against
+it; the bid / no-bid call follows from those judgments, so every call can be traced to the pages
+behind it.
+
+On a real 44-page municipal tender (South Africa, sewage pump spares) a run takes 30 to 45 seconds:
+all 44 pages read, 78 to 96 requirements, 96 to 100% of quotes found on their page, the buyer and
+title read from the tender, and a stable "bid with conditions" for a pump supplier and "no bid" for
+an IT consultancy.
 
 Built for the Nebius x NVIDIA Global AI Hackathon, track "Best Apps and Agents". Apache-2.0.
 
@@ -22,15 +28,31 @@ Built for the Nebius x NVIDIA Global AI Hackathon, track "Best Apps and Agents".
 3. **Verify.** Each quote is normalised (case, whitespace, punctuation, hyphenated line breaks) and
    matched against the cited page by word 5-grams. If 80% or more of the quote's 5-grams are on the
    page it is `verified`. If not, the neighbouring pages (and the break between two pages) are tried
-   and the page number is corrected when the quote is found there. Nothing is dropped: unverified
-   items stay in the list with a flag and their match score.
-4. **Decide.** The company profile and the numbered requirement list go to the decider model
-   (Nemotron 3 Ultra): verdict (`bid`, `bid with conditions`, `no bid`), confidence, the requirements
-   that decide it (by id, with pages) and plain reasons. Ids the model cites that are not in the
-   list are rejected and reported, so the call can never rest on an invented requirement.
-5. **Web UI.** One HTML page (vanilla JS, no build step, no CDN): search, PDF URL or upload, profile,
-   Run, live progress over Server-Sent Events, then the verdict card, the deciding requirements, and
-   a filterable table. Each page number links to the PDF at `#page=N`.
+   and the page number is corrected when the quote is found there. A quote the model stitched from
+   two or three passages of one page (it skipped a clause) passes only if every piece, at least four
+   words long and in page order, is on the page word for word; it is labelled "joined". Nothing is
+   dropped: unverified items stay in the list with a flag and their match score.
+4. **Decide.** Three steps with the decider model (Nemotron 3 Ultra), so no single answer is long:
+   - *scope*: from the first three pages, the tender's title and buyer (kept only if they appear on
+     those pages), what it buys, and whether that is the company's line of work (`fits`, `partly`,
+     `outside`);
+   - *assess*: every mandatory requirement, in batches of 20 run side by side, is judged against the
+     profile: `fails`, `not stated` (must be confirmed or obtained), `met` or `routine` (a form any
+     bidder fills in), with `hard` when it takes weeks, money or a third party. Ids the model skipped
+     are asked again once; any still missing are reported, never guessed;
+   - *summary*: up to four reasons and up to eight conditions, from the judgments.
+
+   The model never picks the verdict. Work outside the company's line, or any `fails`, gives
+   `no bid`; any `not stated` gives `bid with conditions`; otherwise `bid`. The requirements that
+   decide it are listed failures first, then hard to obtain, then by category. Why: on the same list
+   a single free-form call answered "bid 0.92", "no bid 0.95" and "bid with conditions 0.75" in three
+   runs, and one call judging all 78 items at once skipped two thirds of them.
+5. **Web UI.** One HTML page (vanilla JS, no build step; fonts from Google Fonts): search, PDF URL
+   or upload, profile, live progress over Server-Sent Events with a ledger of the PDF's pages that
+   fill in as they are read, then the call (tender, buyer, scope fit, tally, reasons, checklist),
+   the requirements that decide it, and a filterable table. Each page number links to the PDF at
+   `#page=N`; a page tile filters the table to that page. "Open a finished example" shows a saved
+   live run without calling the models.
 6. **CLI.** `python -m reader <pdf-url-or-path> --profile "..."` prints the full result as JSON.
 
 ## Architecture
@@ -72,6 +94,12 @@ Nebius Token Factory serves an OpenAI-compatible API. `llm.py` calls it directly
   the system prompt (both forms are documented at
   <https://docs.tokenfactory.nebius.com/ai-models-inference/json.md>)
 - `temperature = 0`; reasoning blocks (`<think>...</think>`) and code fences are stripped before parsing
+- `reasoning_effort = "low"` for both models. Measured on the 44-page tender: at the default effort
+  Nemotron 3 Super spent the whole 8,192-token budget thinking on dense pages and returned an empty
+  answer (`finish_reason: "length"`) for 2 of 8 chunks; at `"medium"` it thought for 12,486 tokens and
+  returned no requirements; at `"low"` every chunk answered in about 8 seconds. For the decider,
+  `"medium"` called boilerplate collusion declarations decisive. If an answer still comes back empty
+  the client asks once more with thinking off (`chat_template_kwargs = {"enable_thinking": false}`).
 
 Default models, taken from the Nebius model catalog <https://tokenfactory.nebius.com/model-catalog.md>
 (checked 15 Oct 2026):
@@ -79,7 +107,7 @@ Default models, taken from the Nebius model catalog <https://tokenfactory.nebius
 | Role | Env var | Default id |
 |---|---|---|
 | Reader (per chunk) | `READER_MODEL` | `nvidia/nemotron-3-super-120b-a12b` |
-| Decider (once) | `DECIDER_MODEL` | `nvidia/Nemotron-3-Ultra-550b-a55b` |
+| Decider (scope, assessments, summary) | `DECIDER_MODEL` | `nvidia/Nemotron-3-Ultra-550b-a55b` |
 
 The live list for your account is at `GET {NEBIUS_BASE_URL}models`; override the env vars if an id differs.
 
@@ -142,6 +170,11 @@ Tests (offline: a fake LLM, a PDF generated in the test with PyMuPDF, mocked HTT
 | `READER_LLM_TIMEOUT` | `180` | seconds per model call |
 | `READER_MAX_PAGES` | `500` | longer PDFs are refused |
 | `READER_VERIFY_THRESHOLD` | `0.8` | share of quote 5-grams that must be on the page |
+| `READER_EFFORT` | `low` | reader thinking: `none`, `low`, `medium`, `high` or `default` |
+| `DECIDER_EFFORT` | `low` | decider thinking, same values |
+| `READER_MAX_TOKENS` | `16384` | answer budget per model call (thinking included) |
+| `READER_RUNS_PER_HOUR_PER_IP` | `0` | runs one address may start per hour (`0`: no limit) |
+| `READER_RUNS_PER_DAY` | `0` | runs the server starts per day (`0`: no limit) |
 | `READER_ALLOW_PRIVATE_URLS` | `0` | `1` allows localhost / private hosts (local testing only) |
 
 ## Deploy on Nebius Serverless Endpoints
@@ -180,8 +213,9 @@ curl -H "Authorization: Bearer $AUTH_TOKEN" https://<endpoint-url>/api/health
 ```
 
 With `--auth token` every request needs the bearer token, which a plain browser does not send. For a
-public demo page, use `--auth none` and rely on the app's own limits, or put the endpoint behind a
-proxy that adds the header. Runs are held in memory (last 20, one hour), so run a single replica.
+public demo page, use `--auth none` and rely on the app's own limits (`READER_RUNS_PER_HOUR_PER_IP`,
+`READER_RUNS_PER_DAY`), or put the endpoint behind a proxy that adds the header. The per-address
+limit reads `X-Forwarded-For`, which a client can set, so the daily cap is the real guard. Runs are held in memory (last 20, one hour), so run a single replica.
 
 ## Limits and honest notes
 
