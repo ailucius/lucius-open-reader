@@ -4,10 +4,16 @@ from __future__ import annotations
 
 import re
 import unicodedata
+from collections import defaultdict
 
 from .models import Page, Requirement
 
 NGRAM = 5
+# A quote the model stitched together (it skipped a clause or a list lead-in) is still checkable:
+# it passes as "joined" only if it is made, in page order, of at most MAX_PIECES verbatim passages
+# of at least MIN_PIECE words each, with no word left over.
+MIN_PIECE = 4
+MAX_PIECES = 3
 _HYPHEN_BREAK = re.compile(r"(\w)-\s*\n\s*(\w)")
 _NON_WORD = re.compile(r"[\W_]+", re.UNICODE)
 
@@ -34,6 +40,39 @@ def quote_score(quote_words: list[str], page_words: list[str], page_grams: set[t
     return sum(1 for g in grams if g in page_grams) / len(grams)
 
 
+def joined_pieces(quote_words: list[str], page_words: list[str]) -> int:
+    """How many verbatim passages of the page, in order, make up the whole quote (0: it cannot be built)."""
+    if len(quote_words) < MIN_PIECE:
+        return 0
+    positions: dict[str, list[int]] = defaultdict(list)
+    for i, word in enumerate(page_words):
+        positions[word].append(i)
+    i, after, pieces = 0, 0, 0
+    while i < len(quote_words):
+        best = 0
+        best_end = after
+        for start in positions.get(quote_words[i], ()):
+            if start < after:
+                continue
+            k = 0
+            while (
+                i + k < len(quote_words)
+                and start + k < len(page_words)
+                and page_words[start + k] == quote_words[i + k]
+            ):
+                k += 1
+            if k > best:
+                best, best_end = k, start + k
+        if best < MIN_PIECE:
+            return 0
+        pieces += 1
+        if pieces > MAX_PIECES:
+            return 0
+        i += best
+        after = best_end
+    return pieces
+
+
 class PageIndex:
     def __init__(self, pages: list[Page]) -> None:
         self.words: dict[int, list[str]] = {p.number: normalise(p.text) for p in pages}
@@ -43,6 +82,11 @@ class PageIndex:
         if page not in self.words:
             return 0.0
         return quote_score(quote_words, self.words[page], self.grams[page])
+
+    def pieces(self, quote_words: list[str], page: int) -> int:
+        if page not in self.words:
+            return 0
+        return joined_pieces(quote_words, self.words[page])
 
     def score_span(self, quote_words: list[str], first: int) -> float:
         """Score a quote that may run across the break between `first` and `first + 1`."""
@@ -72,11 +116,18 @@ def verify_requirements(reqs: list[Requirement], pages: list[Page], threshold: f
                         # credit the page where the quote starts
                         best_page, best = first, score
         verified = best >= threshold
+        joined = False
+        if not verified:
+            for candidate in (cited, cited - 1, cited + 1):
+                if index.pieces(words, candidate) >= 2:
+                    verified, joined, best_page = True, True, candidate
+                    break
         page = best_page if verified else cited
         out.append(
             req.model_copy(
                 update={
                     "verified": verified,
+                    "joined": joined,
                     "match_score": round(best, 3),
                     "page": page,
                     "cited_page": cited if page != cited else None,

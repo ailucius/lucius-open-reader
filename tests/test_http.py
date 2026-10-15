@@ -10,7 +10,7 @@ import pytest
 from reader.config import Settings
 from reader.fetch import FetchError, fetch_pdf
 from reader.find import FindError, guess_buyer, search_tenders
-from reader.llm import NebiusClient, parse_json_content
+from reader.llm import LLMError, NebiusClient, parse_json_content
 
 PUBLIC = "http://8.8.8.8"  # an IP literal, so no DNS lookup is needed in tests
 
@@ -117,3 +117,32 @@ async def test_nebius_client_request_shape_and_json_object_fallback() -> None:
     assert out == {"requirements": []}
     assert [b["response_format"]["type"] for b in bodies] == ["json_schema", "json_object"]  # type: ignore[index]
     assert bodies[0]["model"] == "nvidia/nemotron-3-super-120b-a12b"
+
+
+async def test_nebius_client_sends_effort_and_retries_without_thinking_on_empty_answer() -> None:
+    bodies: list[dict[str, object]] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        body = json.loads(request.content)
+        bodies.append(body)
+        if "reasoning_effort" in body:
+            # thinking used the whole budget: no answer at all
+            return httpx.Response(200, json={"choices": [{"message": {"content": ""}, "finish_reason": "length"}]})
+        return httpx.Response(200, json={"choices": [{"message": {"content": '{"requirements": []}'}, "finish_reason": "stop"}]})
+
+    client = NebiusClient("nb-test", "https://api.tokenfactory.nebius.com/v1/", transport=httpx.MockTransport(handler), max_tokens=4096)
+    out = await client.chat_json(model="m", system="s", user="u", schema_name="requirements", schema={"type": "object"}, effort="low")
+    assert out == {"requirements": []}
+    assert bodies[0]["reasoning_effort"] == "low" and bodies[0]["max_tokens"] == 4096
+    assert "reasoning_effort" not in bodies[1]
+    assert bodies[1]["chat_template_kwargs"] == {"enable_thinking": False}
+    assert client.thinking_retries == 1
+
+
+async def test_nebius_client_empty_answer_without_thinking_is_an_error() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"choices": [{"message": {"content": None}, "finish_reason": "length"}]})
+
+    client = NebiusClient("nb-test", "https://api.tokenfactory.nebius.com/v1/", transport=httpx.MockTransport(handler))
+    with pytest.raises(LLMError, match="empty"):
+        await client.chat_json(model="m", system="s", user="u", schema_name="x", schema={"type": "object"}, effort="none")

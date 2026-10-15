@@ -260,13 +260,14 @@ $("run-form").addEventListener("submit", async (e) => {
       const d = JSON.parse(ev.data);
       $("c-pages").textContent = d.pages_read + " / " + d.pages_total;
       $("c-reqs").textContent = d.requirements;
-      $("bar").style.width = Math.round(100 * d.pages_read / Math.max(1, d.pages_total)) + "%";
-      log("pages " + d.chunk + " read");
+      $("bar").style.width = Math.round(100 * d.pages_done / Math.max(1, d.pages_total)) + "%";
+      log(d.ok ? "pages " + d.chunk + " read" : "pages " + d.chunk + " could not be read (the model gave no answer)");
     });
     es.addEventListener("verified", ev => {
       const d = JSON.parse(ev.data);
       $("c-ver").textContent = d.verified + " / " + (d.verified + d.unverified);
       if (d.pages_corrected) log(d.pages_corrected + " page numbers corrected by the quote check");
+      if (d.joined) log(d.joined + " quotes join two or three passages of one page; each passage checked word for word");
     });
     es.addEventListener("result", ev => { render(JSON.parse(ev.data).result); log("Done"); finish(); });
     es.addEventListener("error", ev => {
@@ -283,6 +284,7 @@ function pageLink(page) {
   return el("a", { href: "/api/runs/" + state.runId + "/pdf#page=" + page, target: "_blank", rel: "noopener", text: "p. " + page });
 }
 function verBadge(r) {
+  if (r.verified && r.joined) return el("span", { class: "badge warn", title: "The quote joins passages of page " + r.page + "; each passage is on the page word for word, but the model skipped words between them", text: "verified, joined" });
   if (r.verified && r.cited_page) return el("span", { class: "badge warn", title: "Quote found on page " + r.page + ", model cited " + r.cited_page, text: "verified, page fixed" });
   if (r.verified) return el("span", { class: "badge ok", text: "verified" });
   return el("span", { class: "badge bad", title: "Quote not found on the page (match " + Math.round(r.match_score * 100) + "%)", text: "unverified" });

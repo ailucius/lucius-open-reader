@@ -27,7 +27,18 @@ class Requirement(BaseModel):
     verified: bool = False
     match_score: float = 0.0
     cited_page: int | None = None  # set when verification moved the page
+    joined: bool = False  # the quote joins 2-3 verbatim passages of one page (the model skipped words)
     source_chunk: str = ""
+
+
+Status = Literal["fails", "not stated", "met", "routine"]
+
+
+class Assessment(BaseModel):
+    id: str
+    status: Status
+    hard: bool = False  # takes weeks, money or a third party to put right
+    why: str = ""
 
 
 class DecidingRequirement(BaseModel):
@@ -35,15 +46,30 @@ class DecidingRequirement(BaseModel):
     requirement: str
     page: int
     verified: bool
+    status: Status = "not stated"
+    hard: bool = False
     why: str
 
 
+class Scope(BaseModel):
+    title: str | None = None  # kept only when found on the first pages
+    buyer: str | None = None  # kept only when found on the first pages
+    buys: str = ""
+    fit: Literal["fits", "partly", "outside"] = "partly"
+    why: str = ""
+
+
 class Decision(BaseModel):
-    verdict: Verdict
+    verdict: Verdict  # computed from the scope and the assessments, not chosen by the model
     confidence: float = Field(ge=0.0, le=1.0)
+    scope: Scope | None = None
     deciding: list[DecidingRequirement] = []
+    unmet_total: int = 0  # requirements failed or still to confirm (deciding shows the first few)
     reasons: list[str] = []
     conditions: list[str] = []
+    assessments: list[Assessment] = []
+    counts: dict[str, int] = {}
+    unassessed: list[str] = []  # mandatory ids the model gave no judgment for
     rejected_ids: list[str] = []  # ids the model cited that are not in the list
     model: str = ""
 
@@ -59,7 +85,9 @@ class ReadStats(BaseModel):
     verified: int = 0
     unverified: int = 0
     pages_corrected: int = 0
+    joined_quotes: int = 0
     empty_pages: int = 0
+    thinking_retries: int = 0
 
 
 class RunResult(BaseModel):

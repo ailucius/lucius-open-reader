@@ -42,7 +42,8 @@ they must provide, and every rule of the submission (deadline, format, place, va
 For each item return:
 - requirement: one plain-English sentence saying what the bidder must do or have.
 - quote: text copied VERBATIM from the page that states it. One contiguous span, at most 40 words.
-  Do not paraphrase, fix spelling or join text from different places.
+  Do not paraphrase, fix spelling, skip words in the middle or join text from different places.
+  When a requirement sits in a list, quote the list item itself rather than the lead-in plus the item.
 - page: the number from the "=== PAGE n ===" header of the page the quote is on.
 - category: eligibility, technical, commercial, legal, submission or other.
 - mandatory: true if the text makes it compulsory (must, shall, required, will be disqualified);
@@ -125,7 +126,8 @@ async def extract_requirements(
     llm: LLMClient,
     model: str,
     concurrency: int = 4,
-    on_chunk_done: Callable[[list[Page], int], Awaitable[None]] | None = None,
+    on_chunk_done: Callable[[list[Page], int, bool], Awaitable[None]] | None = None,
+    effort: str | None = None,
 ) -> ExtractOutcome:
     """Run every chunk through the reader model, `concurrency` at a time, in document order."""
     sem = asyncio.Semaphore(concurrency)
@@ -136,7 +138,7 @@ async def extract_requirements(
         label = f"pages {chunk[0].number}-{chunk[-1].number}"
         if not any(p.text.strip() for p in chunk):
             if on_chunk_done:
-                await on_chunk_done(chunk, 0)
+                await on_chunk_done(chunk, 0, True)
             return
         async with sem:
             last_error: Exception | None = None
@@ -148,6 +150,7 @@ async def extract_requirements(
                         user=build_extract_prompt(chunk),
                         schema_name="requirements",
                         schema=EXTRACT_SCHEMA,
+                        effort=effort,
                     )
                     reqs, bad = parse_items(raw, chunk, label)
                     results[index] = reqs
@@ -160,7 +163,7 @@ async def extract_requirements(
                 outcome.failed_chunks.append(f"{label}: {last_error}")
                 outcome.failed_pages += len(chunk)
         if on_chunk_done:
-            await on_chunk_done(chunk, len(results[index]))
+            await on_chunk_done(chunk, len(results[index]), last_error is None)
 
     await asyncio.gather(*(one(i, c) for i, c in enumerate(chunks)))
     outcome.requirements = [r for chunk_reqs in results for r in chunk_reqs]

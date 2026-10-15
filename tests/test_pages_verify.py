@@ -81,3 +81,38 @@ def test_verify_quote_across_page_break() -> None:
     out = verify_requirements([_req("deliver the pumps to the site within ninety days of the contract", 2)], pages)
     assert out[0].verified is True
     assert out[0].page == 1
+
+
+def test_verify_accepts_a_quote_joined_from_passages_of_one_page_and_labels_it() -> None:
+    page = Page(
+        number=25,
+        text=(
+            "Without limiting the generality of paragraph 6 above, there has been no consultation, "
+            "communication, agreement or arrangement with any competitor regarding: (a) prices; "
+            "(b) geographical area where product or service will be rendered (market allocation); "
+            "(c) methods, factors or formulas used to calculate prices;"
+        ),
+    )
+    joined = _req(
+        "there has been no consultation, communication, agreement or arrangement with any competitor "
+        "regarding: (c) methods, factors or formulas used to calculate prices;",
+        25,
+    )
+    invented = _req(
+        "there has been no consultation, communication, agreement or arrangement with any competitor "
+        "regarding the delivery schedule of the pumps",
+        25,
+    )
+    out = verify_requirements([joined, invented], [page])
+    assert out[0].verified and out[0].joined and out[0].page == 25
+    assert not out[1].verified and not out[1].joined
+
+
+def test_joined_pieces_needs_whole_quote_in_order_from_long_passages() -> None:
+    from reader.verify import joined_pieces
+
+    page = normalise("alpha beta gamma delta epsilon zeta eta theta iota kappa lambda mu")
+    assert joined_pieces(normalise("alpha beta gamma delta iota kappa lambda mu"), page) == 2
+    assert joined_pieces(normalise("iota kappa lambda mu alpha beta gamma delta"), page) == 0  # out of order
+    assert joined_pieces(normalise("alpha beta gamma delta kappa lambda"), page) == 0  # 2-word piece
+    assert joined_pieces(normalise("alpha beta gamma delta extra iota kappa lambda mu"), page) == 0  # word not on page

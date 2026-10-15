@@ -53,25 +53,33 @@ async def run_reader(
 
     found = 0
     done_pages = 0
+    failed_pages = 0
     lock = asyncio.Lock()
 
-    async def on_chunk(chunk: list[Page], n: int) -> None:
-        nonlocal found, done_pages
+    async def on_chunk(chunk: list[Page], n: int, ok: bool) -> None:
+        nonlocal found, done_pages, failed_pages
         async with lock:
             found += n
             done_pages += len(chunk)
+            if not ok:
+                failed_pages += len(chunk)
             await emit(
                 {
                     "type": "progress",
-                    "pages_read": done_pages,
+                    "pages_done": done_pages,
+                    "pages_read": done_pages - failed_pages,
+                    "pages_failed": failed_pages,
                     "pages_total": len(pages),
                     "requirements": found,
                     "chunk": f"{chunk[0].number}-{chunk[-1].number}",
+                    "ok": ok,
                 }
             )
 
     await emit({"type": "stage", "stage": "read", "message": f"Reading with {settings.reader_model}"})
-    outcome = await extract_requirements(chunks, llm, settings.reader_model, settings.concurrency, on_chunk)
+    outcome = await extract_requirements(
+        chunks, llm, settings.reader_model, settings.concurrency, on_chunk, effort=settings.reader_effort
+    )
 
     await emit({"type": "stage", "stage": "verify", "message": "Checking every quote against its page"})
     reqs = verify_requirements(outcome.requirements, pages, settings.verify_threshold)
@@ -96,12 +104,15 @@ async def run_reader(
     stats.verified = sum(1 for r in unique if r.verified)
     stats.unverified = stats.requirements - stats.verified
     stats.pages_corrected = sum(1 for r in unique if r.cited_page is not None)
+    stats.joined_quotes = sum(1 for r in unique if r.joined)
+    stats.thinking_retries = getattr(llm, "thinking_retries", 0)
     await emit(
         {
             "type": "verified",
             "verified": stats.verified,
             "unverified": stats.unverified,
             "pages_corrected": stats.pages_corrected,
+            "joined": stats.joined_quotes,
         }
     )
 
@@ -121,8 +132,16 @@ async def run_reader(
         result.decision_note = "No requirements were found, so there is nothing to decide on."
     else:
         await emit({"type": "stage", "stage": "decide", "message": f"Deciding with {settings.decider_model}"})
-        decision, left_out = await decide(profile, unique, llm, settings.decider_model)
+        decision, unassessed = await decide(
+            profile,
+            unique,
+            llm,
+            settings.decider_model,
+            settings.decider_effort,
+            pages=pages,
+            concurrency=settings.concurrency,
+        )
         result.decision = decision
-        if left_out:
-            result.decision_note = f"{left_out} optional requirements were left out of the decision prompt."
+        if unassessed:
+            result.decision_note = f"The decider gave no judgment for {unassessed} mandatory requirements."
     return result, pdf

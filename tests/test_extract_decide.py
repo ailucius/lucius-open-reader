@@ -1,14 +1,15 @@
 from __future__ import annotations
 
 import asyncio
+import re
 from typing import Any
 
 import pytest
 
-from reader.decide import decide, parse_decision
+from reader.decide import decide, deciding_from, parse_assessments, parse_scope, verdict_from
 from reader.extract import extract_requirements, parse_items
 from reader.llm import FakeLLM, LLMError
-from reader.models import Page, Requirement
+from reader.models import Page, Requirement, Scope
 from reader.pages import chunk_pages, extract_pages
 
 
@@ -76,39 +77,89 @@ async def test_fake_llm_extracts_from_generated_pdf(tender_pdf: bytes) -> None:
 
 def _reqs() -> list[Requirement]:
     return [
-        Requirement(id="R1", requirement="Grade 7 registration", quote="q", page=2, verified=True),
-        Requirement(id="R2", requirement="Bid guarantee 2%", quote="q", page=4, verified=False),
+        Requirement(id="R1", requirement="Grade 7 registration", quote="q", page=2, verified=True, category="eligibility"),
+        Requirement(id="R2", requirement="Bid guarantee 2%", quote="q", page=4, verified=False, category="commercial"),
+        Requirement(id="R3", requirement="Sign form MBD 4", quote="q", page=9, verified=True, category="legal"),
+        Requirement(id="R4", requirement="Optional site visit", quote="q", page=9, mandatory=False),
     ]
 
 
-def test_parse_decision_rejects_ids_not_in_list() -> None:
-    raw = {
-        "verdict": "No-Bid",
-        "confidence": 80,
-        "deciding": [{"id": "R1", "why": "not registered"}, {"id": "R99", "why": "invented"}, {"id": "[R1]", "why": "dup"}],
-        "reasons": ["Not registered at grade 7."],
-        "conditions": [],
-    }
-    d = parse_decision(raw, _reqs(), "m")
-    assert d.verdict == "no bid"
-    assert d.confidence == pytest.approx(0.8)
-    assert [x.id for x in d.deciding] == ["R1"]
-    assert d.deciding[0].page == 2
-    assert d.rejected_ids == ["R99"]
-
-
-def test_parse_decision_unknown_verdict_is_an_error() -> None:
-    with pytest.raises(LLMError):
-        parse_decision({"verdict": "maybe", "confidence": 0.5}, _reqs(), "m")
-
-
-async def test_decide_prompt_carries_ids_pages_and_flags() -> None:
-    fake = FakeLLM()
+def test_assessments_keep_batch_ids_and_the_verdict_follows_them() -> None:
     reqs = _reqs()
-    decision, left_out = await decide("Civil works contractor, grade 6.", reqs, fake, "decider")
-    assert left_out == 0
-    prompt = fake.calls[0]["user"]
-    assert "[R1] page 2 | mandatory | verified" in prompt
-    assert "[R2] page 4 | mandatory | UNVERIFIED" in prompt
+    raw = {
+        "assessments": [
+            {"id": "R1", "status": "not stated", "hard": True, "why": "grade not in profile"},
+            {"id": "R2", "status": "Fails", "why": "no bank facility"},
+            {"id": "R3", "status": "not stated", "hard": False, "why": "form"},
+            {"id": "R99", "status": "fails", "why": "invented"},
+            {"id": "[R1]", "status": "met", "why": "dup"},
+            {"id": "R3", "status": "maybe", "why": "dup with a bad status"},
+        ]
+    }
+    got, rejected = parse_assessments(raw, reqs[:3])
+    assert [(a.id, a.status, a.hard) for a in got] == [("R1", "not stated", True), ("R2", "fails", False), ("R3", "not stated", False)]
+    assert rejected == ["R99"]
+    assert verdict_from(None, got) == "no bid"
+    assert [(x.id, x.status, x.page, x.verified) for x in deciding_from(got, reqs)] == [
+        ("R2", "fails", 4, False),
+        ("R1", "not stated", 2, True),  # hard to obtain comes before the easy one
+        ("R3", "not stated", 9, True),
+    ]
+    assert verdict_from(None, got[:1]) == "bid with conditions"
+    assert verdict_from(None, []) == "bid"
+    assert verdict_from(Scope(fit="outside"), []) == "no bid"
+
+
+def test_scope_keeps_names_only_when_they_are_on_the_pages() -> None:
+    pages = [Page(number=1, text="ABAQULUSI LOCAL MUNICIPALITY. Tender 8/2/1-656: Supply of water pumps.")]
+    scope = parse_scope({"title": "Supply of water pumps", "buyer": "City of Gotham", "buys": "Pumps.", "fit": "Partial", "why": "w"}, pages)
+    assert scope.title == "Supply of water pumps" and scope.buyer is None and scope.fit == "partly"
+
+
+async def test_decide_runs_scope_batches_and_summary_with_effort(tender_pdf: bytes) -> None:
+    fake = FakeLLM()
+    pages = extract_pages(tender_pdf)
+    decision, unassessed = await decide("Civil works contractor, grade 6.", _reqs(), fake, "decider", "low", pages=pages)
+    assert unassessed == 0
+    assert [c["schema_name"] for c in fake.calls] == ["scope", "assessments", "summary"]
+    assert all(c["effort"] == "low" for c in fake.calls)
+    prompt = fake.calls[1]["user"]
+    assert "[R1] page 2 | verified | eligibility" in prompt and "[R2] page 4 | UNVERIFIED | commercial" in prompt
+    assert "R4" not in prompt  # optional requirements are not assessed
     assert decision.verdict == "bid with conditions"
-    assert {x.id for x in decision.deciding} == {"R1", "R2"}
+    assert [x.id for x in decision.deciding] == ["R1"] and decision.unmet_total == 1
+    assert decision.counts == {"fails": 0, "not stated": 1, "met": 0, "routine": 2}
+
+
+class SkippingLLM:
+    """Assesses only the first id it is asked about, so every batch needs the second attempt."""
+
+    def __init__(self) -> None:
+        self.asked: list[list[str]] = []
+
+    async def chat_json(self, **kwargs: Any) -> dict[str, Any]:
+        if kwargs["schema_name"] != "assessments":
+            raise LLMError("no scope or summary here")
+        ids = re.findall(r"^\[(R\d+)\]", kwargs["user"], re.M)
+        self.asked.append(ids)
+        return {"assessments": [{"id": ids[0], "status": "met", "why": ""}]}
+
+
+async def test_skipped_ids_are_asked_again_once_then_reported() -> None:
+    llm = SkippingLLM()
+    decision, unassessed = await decide("p", _reqs(), llm, "m")
+    assert llm.asked == [["R1", "R2", "R3"], ["R2", "R3"]]
+    assert unassessed == 1 and decision.unassessed == ["R3"]
+    assert decision.verdict == "bid" and decision.scope is None and decision.reasons == []
+
+
+async def test_failed_chunk_is_reported_as_not_read() -> None:
+    pages = [Page(number=i, text=f"page {i} text: bidders must submit form {i}") for i in range(1, 5)]
+    seen: list[tuple[str, int, bool]] = []
+
+    async def on_chunk(chunk: list[Page], n: int, ok: bool) -> None:
+        seen.append((f"{chunk[0].number}-{chunk[-1].number}", n, ok))
+
+    outcome = await extract_requirements(chunk_pages(pages, 2), ScriptedLLM(LLMError("model reply is empty")), "m", 2, on_chunk)
+    assert sorted(seen) == [("1-2", 0, False), ("3-4", 0, False)]
+    assert outcome.failed_pages == 4 and len(outcome.failed_chunks) == 2
