@@ -1,0 +1,10 @@
+# what Cloud Build needs is the Dockerfile, requirements.txt and reader/
+.git/
+.gitignore
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.env
+scratch/
+tests/
