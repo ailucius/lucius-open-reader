@@ -114,6 +114,8 @@ async def run_reader(
     await emit(
         {
             "type": "verified",
+            "requirements": stats.requirements,  # after exact duplicates are merged
+            "duplicates_merged": stats.duplicates_merged,
             "verified": stats.verified,
             "unverified": stats.unverified,
             "pages_corrected": stats.pages_corrected,

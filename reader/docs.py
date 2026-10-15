@@ -97,7 +97,9 @@ Return:
 - documents: the links that are the tender documents a bidder needs: the tender document or bid
   pack, terms of reference, specifications, bills of quantities, forms, addenda. Only for open
   tenders that match what the company is looking for. Not cancellation letters, award notices,
-  lists of received bids, annual plans or general policies. Best first, at most {MAX_DOCS}.
+  lists of received bids, annual plans or general policies. At most {MAX_DOCS}, ordered: for each
+  tender, its main tender document (the bid pack) first, then specifications, bills of quantities,
+  forms, addenda and adverts; the tender that fits the company best comes first.
 - open_next: if the documents are not on this page, the links most likely to lead to them (the
   tender's own notice page, a "tenders" or "bids" page, a downloads page). At most {OPEN_NEXT}.
   Empty when documents were found.

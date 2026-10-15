@@ -431,7 +431,9 @@ function startView() {
   for (const id of ["call-box", "deciding-box", "table-box", "intro"]) $(id).classList.add("hidden");
   $("progress-box").classList.remove("hidden"); $("log").replaceChildren(); $("progress-h").textContent = "Reading";
   setCounts("0 / 0", "0", "–"); state.page = null;
-  if (matchMedia("(max-width: 940px)").matches) $("progress-box").scrollIntoView({ behavior: "auto", block: "start" });
+  // the run's progress is the thing to watch: bring it into view wherever the form left the page
+  const top = $("progress-box").getBoundingClientRect().top;
+  if (top < 0 || top > innerHeight * 0.5) $("progress-box").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 }
 
 function drawLedger(total, blank) {
@@ -480,6 +482,8 @@ $("run-form").addEventListener("submit", async (e) => {
     es.addEventListener("verified", ev => {
       const d = JSON.parse(ev.data);
       $("c-ver").textContent = d.verified + " / " + (d.verified + d.unverified);
+      if (d.requirements != null) $("c-reqs").textContent = d.requirements;
+      if (d.duplicates_merged) log(d.duplicates_merged + " exact duplicates merged");
       if (d.pages_corrected) log(d.pages_corrected + " page numbers corrected by the quote check");
       if (d.joined) log(d.joined + " quotes join two or three passages of one page; each passage checked word for word");
     });
@@ -532,6 +536,7 @@ function render(res) {
     if (n) { t.classList.add("has", n >= 6 ? "l3" : n >= 3 ? "l2" : "l1"); t.textContent = String(n); t.title = "Page " + p + ": " + n + " requirement" + (n > 1 ? "s" : ""); t.tabIndex = 0; }
   }
   const s = res.stats;
+  $("c-reqs").textContent = s.requirements;  // after exact duplicates are merged, so it matches the quote count
   const notes = [res.decision_note,
     s.chunks_failed.length ? s.chunks_failed.length + " parts could not be read: " + s.chunks_failed.join("; ") : null,
     s.malformed_items ? s.malformed_items + " items from the model were not usable" : null,
