@@ -31,6 +31,9 @@
   --go: #79cf9f; --go-soft: #173226; --cond: #f0b35f; --cond-soft: #3a2b17; --stop: #f29a92; --stop-soft: #3d1f1d;
   --tile: #243241; --tile-read: #4d6a88; --focus: #8ab6ff;
 }
+:root { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { color-scheme: dark; } }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body { margin: 0; background: var(--desk); color: var(--ink); font: 15px/1.55 var(--sans); font-variant-numeric: tabular-nums; }
@@ -381,6 +384,7 @@ function startView() {
   for (const id of ["call-box", "deciding-box", "table-box", "intro"]) $(id).classList.add("hidden");
   $("progress-box").classList.remove("hidden"); $("log").replaceChildren(); $("progress-h").textContent = "Reading";
   setCounts("0 / 0", "0", "–"); state.page = null;
+  if (matchMedia("(max-width: 940px)").matches) $("progress-box").scrollIntoView({ behavior: "auto", block: "start" });
 }
 
 function drawLedger(total, blank) {
