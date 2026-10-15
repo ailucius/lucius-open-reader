@@ -16,6 +16,8 @@ an IT consultancy.
 
 Built for the Nebius x NVIDIA Global AI Hackathon, track "Best Apps and Agents". Apache-2.0.
 
+**Demo video (2:22):** <https://youtu.be/BwU8NtvhWL8>
+
 **Live demo:** <https://lucius-open-reader-384599766402.europe-west1.run.app> (reads are capped per
 visitor and per day; "Open a finished example" shows a saved live run without calling the models).
 
