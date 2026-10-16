@@ -24,6 +24,7 @@ from .llm import LLMClient, get_client
 from .pipeline import Event, run_reader
 
 STATIC = Path(__file__).parent / "static"
+ROBOTS = "User-agent: *\nAllow: /\nDisallow: /api/\n"
 EXAMPLE = STATIC / "example.json"  # one saved run from the live models, served without calling them
 MAX_RUNS = 20
 RUN_TTL_S = 3600
@@ -107,6 +108,15 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
     @app.get("/")
     async def index() -> FileResponse:
         return FileResponse(STATIC / "index.html", media_type="text/html")
+
+    @app.get("/favicon.svg", include_in_schema=False)
+    @app.get("/favicon.ico", include_in_schema=False)
+    async def favicon() -> FileResponse:
+        return FileResponse(STATIC / "favicon.svg", media_type="image/svg+xml")
+
+    @app.get("/robots.txt", include_in_schema=False)
+    async def robots() -> Response:
+        return Response(ROBOTS, media_type="text/plain")
 
     @app.get("/api/health")
     async def health() -> dict[str, Any]:

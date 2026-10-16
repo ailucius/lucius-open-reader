@@ -104,3 +104,18 @@ def test_documents_route_needs_a_search_key_and_a_web_address() -> None:
     with TestClient(app) as client:
         assert client.post("/api/documents", json={"url": "ftp://x/y"}).status_code == 400
         assert client.post("/api/documents", json={"url": "https://buyer.example/tenders/"}).status_code == 503
+
+
+def test_favicon_and_robots_are_served() -> None:
+    app = create_app(Settings(fake_llm=True))
+    with TestClient(app) as client:
+        for path in ("/favicon.svg", "/favicon.ico"):
+            r = client.get(path)
+            assert r.status_code == 200
+            assert r.headers["content-type"].startswith("image/svg+xml")
+            assert r.text.lstrip().startswith("<svg")
+        r = client.get("/robots.txt")
+        assert r.status_code == 200
+        assert r.headers["content-type"].startswith("text/plain")
+        assert "Disallow: /api/" in r.text
+        assert 'rel="icon"' in client.get("/").text
