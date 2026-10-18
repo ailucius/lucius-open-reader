@@ -105,9 +105,14 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
             oldest = min(runs.values(), key=lambda r: r.created)
             runs.pop(oldest.id, None)
 
-    @app.get("/")
+    # GET and HEAD: link checkers and preview bots ask with HEAD first.
+    @app.api_route("/", methods=["GET", "HEAD"])
     async def index() -> FileResponse:
         return FileResponse(STATIC / "index.html", media_type="text/html")
+
+    @app.api_route("/og.png", methods=["GET", "HEAD"], include_in_schema=False)
+    async def preview_image() -> FileResponse:
+        return FileResponse(STATIC / "og.png", media_type="image/png")
 
     @app.get("/favicon.svg", include_in_schema=False)
     @app.get("/favicon.ico", include_in_schema=False)
