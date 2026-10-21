@@ -18,9 +18,11 @@ from pydantic import BaseModel
 from . import __version__
 from .config import Settings
 from .docs import find_documents
+from .export import checklist_csv, checklist_xlsx, export_filename
 from .fetch import FetchError
 from .find import FindError, search_tenders
 from .llm import LLMClient, get_client
+from .models import RunResult
 from .pipeline import Event, run_reader
 
 STATIC = Path(__file__).parent / "static"
@@ -28,6 +30,26 @@ ROBOTS = "User-agent: *\nAllow: /\nDisallow: /api/\n"
 EXAMPLE = STATIC / "example.json"  # one saved run from the live models, served without calling them
 MAX_RUNS = 20
 RUN_TTL_S = 3600
+XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+
+
+def checklist_response(result: RunResult, fmt: str) -> Response:
+    """The bid checklist as a download: `xlsx` (Checklist and Summary sheets) or `csv` (the checklist)."""
+    if fmt == "xlsx":
+        body, media = checklist_xlsx(result), XLSX
+    elif fmt == "csv":
+        body, media = checklist_csv(result), "text/csv; charset=utf-8"
+    else:
+        raise HTTPException(404, "the checklist comes as .xlsx or .csv")
+    return Response(
+        body,
+        media_type=media,
+        headers={
+            "Content-Disposition": f'attachment; filename="{export_filename(result, fmt)}"',
+            "Cache-Control": "no-store",
+            "X-Content-Type-Options": "nosniff",
+        },
+    )
 
 
 @dataclass
@@ -131,6 +153,8 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
             "fake_llm": settings.fake_llm,
             "reader_model": settings.reader_model,
             "decider_model": settings.decider_model,
+            "vision_model": settings.vision_model,
+            "max_scan_pages": settings.max_scan_pages,
             "llm_ready": settings.fake_llm or bool(settings.nebius_api_key),
             "find_ready": bool(settings.tavily_api_key),
             "example_ready": EXAMPLE.is_file(),
@@ -142,6 +166,12 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
         if not EXAMPLE.is_file():
             raise HTTPException(404, "no example on this server")
         return FileResponse(EXAMPLE, media_type="application/json")
+
+    @app.get("/api/example/checklist.{fmt}")
+    async def example_checklist(fmt: str) -> Response:
+        if not EXAMPLE.is_file():
+            raise HTTPException(404, "no example on this server")
+        return checklist_response(RunResult.model_validate_json(EXAMPLE.read_bytes()), fmt)
 
     @app.post("/api/find")
     async def find(req: FindRequest, request: Request) -> dict[str, Any]:
@@ -255,6 +285,13 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
     async def run_status(run_id: str) -> JSONResponse:
         run = get_run(run_id)
         return JSONResponse({"run_id": run.id, "done": run.done, "events": len(run.events), "result": run.result})
+
+    @app.get("/api/runs/{run_id}/checklist.{fmt}")
+    async def run_checklist(run_id: str, fmt: str) -> Response:
+        run = get_run(run_id)
+        if run.result is None:
+            raise HTTPException(404, "the checklist is ready when the run has finished")
+        return checklist_response(RunResult.model_validate(run.result), fmt)
 
     @app.get("/api/runs/{run_id}/pdf")
     async def run_pdf(run_id: str) -> Response:

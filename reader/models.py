@@ -15,6 +15,8 @@ VERDICTS: tuple[str, ...] = ("bid", "bid with conditions", "no bid")
 class Page(BaseModel):
     number: int  # 1-based, as a human reads it
     text: str
+    scan: bool = False  # no usable text layer, but an image covers the page: read it from the image
+    transcribed: bool = False  # `text` is the vision model's transcription of the page image
 
 
 class Requirement(BaseModel):
@@ -28,6 +30,7 @@ class Requirement(BaseModel):
     match_score: float = 0.0
     cited_page: int | None = None  # set when verification moved the page
     joined: bool = False  # the quote joins 2-3 verbatim passages of one page (the model skipped words)
+    scanned: bool = False  # its page is a scan: the quote was checked against the vision model's transcription
     source_chunk: str = ""
 
 
@@ -86,8 +89,12 @@ class ReadStats(BaseModel):
     unverified: int = 0
     pages_corrected: int = 0
     joined_quotes: int = 0
-    empty_pages: int = 0
+    empty_pages: int = 0  # no text and nothing to read from an image (blank pages)
     empty_page_numbers: list[int] = []
+    scanned_pages: list[int] = []  # scans read from the page image by the vision model
+    scan_failed_pages: list[int] = []  # scans the vision model could not read (two tries), so not read
+    scan_skipped_pages: list[int] = []  # scans over the per-run cap, so not read
+    scan_cap: int = 0
     thinking_retries: int = 0
 
 
@@ -97,7 +104,9 @@ class RunResult(BaseModel):
     profile: str = ""
     reader_model: str
     decider_model: str
+    vision_model: str | None = None  # set when scanned pages were sent to it
     fake_llm: bool
+    read_at: str | None = None  # UTC, ISO 8601
     stats: ReadStats
     requirements: list[Requirement]
     decision: Decision | None = None

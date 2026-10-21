@@ -10,10 +10,17 @@ DEFAULT_NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
 # Verified 2026-10-15 against https://tokenfactory.nebius.com/model-catalog.md
 DEFAULT_READER_MODEL = "nvidia/nemotron-3-super-120b-a12b"
 DEFAULT_DECIDER_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
+# Confirmed 2026-10-21 in GET {NEBIUS_BASE_URL}models; it takes OpenAI-style image_url parts with a
+# base64 data URL and answered a test page word for word in about 2 seconds with thinking off.
+DEFAULT_VISION_MODEL = "nvidia/Nemotron-3.5-Super-VL"
 # Measured 2026-10-15 on a 44-page tender: at the default or "medium" effort the reader thought for
 # 8k-12k tokens on dense pages and returned nothing; "low" answered every chunk in about 8 seconds.
 DEFAULT_READER_EFFORT = "low"
 DEFAULT_DECIDER_EFFORT = "low"
+# Copying a page needs no reasoning. Measured 2026-10-21: with thinking on, 235 of the 273 answer
+# tokens for a three-line page were thinking; with it off, a denser page with a table came back word
+# for word in 2 seconds.
+DEFAULT_VISION_EFFORT = "none"
 EFFORTS = ("none", "low", "medium", "high")
 # Verified 2026-10-15 against https://docs.tavily.com/documentation/api-reference/endpoint/search
 TAVILY_SEARCH_URL = "https://api.tavily.com/search"
@@ -59,6 +66,10 @@ class Settings:
     finder_model: str = DEFAULT_READER_MODEL
     finder_effort: str | None = "high"
     finder_temperature: float = 0.6
+    vision_model: str = DEFAULT_VISION_MODEL
+    vision_effort: str | None = DEFAULT_VISION_EFFORT
+    scan_dpi: int = 150  # an A4 page is 1240 x 1755 pixels, about 2,300 input tokens
+    max_scan_pages: int = 40  # scanned pages read from their image per run (0: switched off)
     tavily_api_key: str | None = None
     fake_llm: bool = False
     concurrency: int = 4
@@ -89,6 +100,10 @@ class Settings:
             finder_model=os.environ.get("FINDER_MODEL") or DEFAULT_READER_MODEL,
             finder_effort=_effort("FINDER_EFFORT", "high"),
             finder_temperature=_float("FINDER_TEMPERATURE", 0.6),
+            vision_model=os.environ.get("VISION_MODEL") or DEFAULT_VISION_MODEL,
+            vision_effort=_effort("VISION_EFFORT", DEFAULT_VISION_EFFORT),
+            scan_dpi=min(300, max(72, _int("READER_SCAN_DPI", 150))),
+            max_scan_pages=max(0, _int("READER_MAX_SCAN_PAGES", 40)),
             tavily_api_key=os.environ.get("TAVILY_API_KEY") or None,
             fake_llm=_flag("READER_FAKE_LLM"),
             concurrency=max(1, _int("READER_CONCURRENCY", 4)),

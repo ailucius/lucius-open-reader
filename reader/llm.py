@@ -8,10 +8,14 @@ Nemotron 3 models think before they answer. At the default effort a dense tender
 whole token budget on thinking and come back with an empty answer (finish_reason "length"), so the
 client sends `reasoning_effort` and, if an answer still comes back empty, asks once more with
 thinking switched off (`chat_template_kwargs={"enable_thinking": false}`).
+
+Scanned pages go to the vision model (Nemotron 3.5 Super VL) as an OpenAI-style user message with a
+text part and an `image_url` part holding a base64 data URL; it answers in plain text.
 """
 
 from __future__ import annotations
 
+import base64
 import json
 import re
 from typing import Any, Protocol
@@ -38,6 +42,21 @@ class LLMClient(Protocol):
         temperature: float | None = None,
     ) -> dict[str, Any]: ...
 
+    async def chat_image(
+        self,
+        *,
+        model: str,
+        system: str,
+        user: str,
+        image: bytes,
+        mime: str,
+        effort: str | None = None,
+    ) -> str: ...
+
+
+# A page transcription is a page of text: a few thousand tokens at most. A reply that runs to this
+# budget is a model repeating itself, not a page.
+IMAGE_MAX_TOKENS = 8192
 
 _THINK = re.compile(r"<think>.*?</think>", re.DOTALL | re.IGNORECASE)
 _FENCE = re.compile(r"```(?:json)?\s*(.*?)```", re.DOTALL)
@@ -132,6 +151,47 @@ class NebiusClient:
             raise LLMError(f"model reply is empty (finish_reason {finish!r})")
         return parse_json_content(content)
 
+    async def chat_image(
+        self,
+        *,
+        model: str,
+        system: str,
+        user: str,
+        image: bytes,
+        mime: str,
+        effort: str | None = None,
+    ) -> str:
+        """Plain-text answer about one image (a page of text inside a JSON string would need every
+        quote mark and line break escaped, and one broken escape loses the page)."""
+        data_url = f"data:{mime};base64," + base64.b64encode(image).decode("ascii")
+        body: dict[str, Any] = {
+            "model": model,
+            "temperature": 0.0,
+            "max_tokens": min(self._max_tokens, IMAGE_MAX_TOKENS),
+            "messages": [
+                {"role": "system", "content": system},
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": user},
+                        {"type": "image_url", "image_url": {"url": data_url}},
+                    ],
+                },
+            ],
+        }
+        _set_thinking(body, effort)
+        content, finish = self._answer(await self._post(body))
+        if not content.strip() and effort != "none":
+            self.thinking_retries += 1
+            _set_thinking(body, "none")
+            content, finish = self._answer(await self._post(body))
+        if finish == "length":
+            raise LLMError("image reply ran out of tokens (finish_reason 'length')")
+        text = _THINK.sub("", content).strip()
+        if not text:
+            raise LLMError(f"image reply is empty (finish_reason {finish!r})")
+        return text
+
     @staticmethod
     def _answer(resp: httpx.Response) -> tuple[str, str | None]:
         if resp.status_code >= 400:
@@ -179,11 +239,15 @@ def _guess_category(sentence: str) -> str:
 class FakeLLM:
     """Deterministic offline stand-in: rule-based extraction and a rule-based decision.
 
-    Used by tests and by `READER_FAKE_LLM=1` demos. It never calls the network.
+    Used by tests and by `READER_FAKE_LLM=1` demos. It never calls the network. It cannot read
+    images: a scanned page is "transcribed" only from `transcripts` (page number -> text), which
+    tests fill with the text they drew on the page; any other page image fails.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, transcripts: dict[int, str] | None = None) -> None:
         self.calls: list[dict[str, Any]] = []
+        self.image_calls: list[dict[str, Any]] = []
+        self.transcripts = transcripts or {}
 
     async def chat_json(
         self,
@@ -213,6 +277,23 @@ class FakeLLM:
                 "conditions": ["Confirm every mandatory requirement against your own documents."],
             }
         raise LLMError(f"fake LLM has no rule for {schema_name}")
+
+    async def chat_image(
+        self,
+        *,
+        model: str,
+        system: str,
+        user: str,
+        image: bytes,
+        mime: str,
+        effort: str | None = None,
+    ) -> str:
+        self.image_calls.append({"model": model, "user": user, "mime": mime, "bytes": len(image), "effort": effort})
+        match = re.search(r"\bPage (\d+)\b", user)
+        page = int(match.group(1)) if match else 0
+        if page not in self.transcripts:
+            raise LLMError("the offline fake client cannot read page images")
+        return self.transcripts[page]
 
     @staticmethod
     def _extract(user: str) -> dict[str, Any]:

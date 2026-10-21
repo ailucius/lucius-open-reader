@@ -55,13 +55,14 @@ header { background: var(--sheet); border-bottom: 1px solid var(--line); }
 .top { max-width: 1240px; margin: 0 auto; padding: 14px 16px; display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; }
 .name { font-weight: 800; font-size: 18px; letter-spacing: -0.015em; }
 .what { color: var(--muted); }
-.engine { margin-left: auto; color: var(--muted); font-size: 13px; }
+/* the engine line shrinks and wraps its own text, so the theme switch stays on the first line */
+.engine { margin-left: auto; color: var(--muted); font-size: 13px; flex: 1 1 280px; text-align: right; }
 .engine .chip { margin-right: 6px; }
 .engine b { color: var(--ink); font-weight: 600; }
 .theme { font: 500 13px var(--sans); color: var(--muted); background: transparent; border: 1px solid var(--line); border-radius: 4px; padding: 4px 10px; cursor: pointer; }
 
 main { max-width: 1240px; margin: 0 auto; padding: 20px 16px 56px; display: grid; grid-template-columns: 370px minmax(0, 1fr); gap: 20px; align-items: start; }
-@media (max-width: 940px) { main { grid-template-columns: 1fr; } .engine { margin-left: 0; order: 3; width: 100%; } }
+@media (max-width: 940px) { main { grid-template-columns: 1fr; } .engine { margin-left: 0; order: 3; flex-basis: 100%; min-width: 0; text-align: left; } }
 .col { display: grid; gap: 16px; min-width: 0; }
 .sheet { background: var(--sheet); border: 1px solid var(--line); border-radius: 6px; padding: 18px; min-width: 0; }
 h2 { font-size: 16px; font-weight: 700; margin: 0 0 4px; letter-spacing: -0.005em; }
@@ -117,7 +118,10 @@ button:disabled { opacity: 0.55; cursor: progress; }
 .tile.l2 { background: color-mix(in srgb, var(--blue) 72%, var(--tile)); }
 .tile.l3 { background: var(--blue); }
 .tile.failed { background: repeating-linear-gradient(135deg, var(--stop-soft) 0 4px, var(--stop) 4px 6px); }
+.tile.skipped { background: repeating-linear-gradient(135deg, var(--cond-soft) 0 4px, var(--cond) 4px 6px); }
 .tile.blank { background: repeating-linear-gradient(90deg, var(--tile) 0 3px, transparent 3px 6px); outline: 1px solid var(--tile); outline-offset: -1px; }
+/* a scanned page: a folded corner, kept whatever the tile's fill */
+.tile.scan::before { content: ""; position: absolute; top: 0; right: 0; border-top: 9px solid var(--ink); border-left: 9px solid transparent; border-top-right-radius: 3px; opacity: 0.8; }
 .tile.decides::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 6px; height: 6px; margin-left: -3px; border-radius: 50%; background: var(--cond); }
 .tile.decides.stopper::after { background: var(--stop); }
 .tile.picked { outline: 2px solid var(--ink); outline-offset: 1px; }
@@ -127,6 +131,8 @@ button:disabled { opacity: 0.55; cursor: progress; }
 .legend i.read { background: var(--tile-read); }
 .legend i.blank { background: repeating-linear-gradient(90deg, var(--tile) 0 2px, transparent 2px 4px); outline: 1px solid var(--tile); outline-offset: -1px; }
 .legend i.failed { background: repeating-linear-gradient(135deg, var(--stop-soft) 0 3px, var(--stop) 3px 5px); }
+.legend i.skipped { background: repeating-linear-gradient(135deg, var(--cond-soft) 0 3px, var(--cond) 3px 5px); }
+.legend i.scan { background: linear-gradient(225deg, var(--ink) 0 35%, var(--tile-read) 35%); }
 .legend i.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--cond); vertical-align: 1px; }
 .log { list-style: none; margin: 12px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; max-height: 128px; overflow: auto; }
 .log li::before { content: "\2022"; margin-right: 8px; color: var(--line); }
@@ -174,6 +180,13 @@ h3 { font-size: 14px; font-weight: 700; margin: 0 0 8px; }
 .checklist li + li { margin-top: 7px; }
 .checklist li::before { content: ""; width: 13px; height: 13px; border: 1.5px solid var(--muted); border-radius: 2px; margin-top: 5px; }
 .note { color: var(--muted); font-size: 13.5px; margin: 14px 0 0; }
+.warn { color: var(--cond); background: var(--cond-soft); padding: 9px 11px; border-radius: 4px; margin: 14px 0 0; font-size: 14px; }
+.export { display: flex; align-items: center; gap: 8px 14px; flex-wrap: wrap; margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--line); }
+.btn { font: 600 14.5px var(--sans); color: var(--blue); background: transparent; border: 1px solid var(--blue); border-radius: 4px; padding: 8px 14px; text-decoration: none; white-space: nowrap; }
+.btn:hover { background: var(--blue-soft); }
+.export .linkish { font-size: 14px; }
+.export .meta { flex: 1 1 260px; }
+.tags-inline { display: flex; gap: 4px; flex-wrap: wrap; }
 
 /* what decides it */
 .decides-list { list-style: none; margin: 0; padding: 0; }
@@ -244,7 +257,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 40px; color: var(--m
       <p class="sub">Give it a tender. It lists every requirement with the tender's own words and the page they are on, then tells you whether to bid.</p>
       <div class="flow">
         <div class="step"><b>Find</b><span>Tavily searches the web for tender documents.</span></div>
-        <div class="step"><b>Read</b><span>Nemotron 3 Super reads six pages at a time and quotes each requirement.</span></div>
+        <div class="step"><b>Read</b><span>Nemotron 3 Super reads six pages at a time and quotes each requirement. Scanned pages are first read from the page image by Nemotron 3.5 Super VL.</span></div>
         <div class="step"><b>Check</b><span>Every quote is matched to its page. Wrong pages are fixed; misses stay flagged.</span></div>
         <div class="step"><b>Decide</b><span>Nemotron 3 Ultra judges each mandatory requirement against your company. The call follows from those judgments.</span></div>
       </div>
@@ -259,7 +272,7 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 40px; color: var(--m
       </div>
       <div class="ledger" id="ledger" role="group" aria-label="Pages of the tender"></div>
       <div class="legend" id="legend">
-        <span><i></i>not read yet</span><span><i class="read"></i>read, nothing found</span><span><i class="l3"></i>requirements (number on the tile)</span><span><i class="blank"></i>scan, no text</span><span><i class="failed"></i>could not be read</span><span><i class="dot"></i>decides the call</span>
+        <span><i></i>not read yet</span><span><i class="read"></i>read, nothing found</span><span><i class="l3"></i>requirements (number on the tile)</span><span><i class="scan"></i>scanned: read from the page image</span><span><i class="blank"></i>blank, no text</span><span><i class="failed"></i>could not be read</span><span><i class="skipped"></i>scan over the cap, not read</span><span><i class="dot"></i>decides the call</span>
       </div>
       <ul class="log" id="log"></ul>
     </section>
@@ -278,7 +291,13 @@ footer { max-width: 1240px; margin: 0 auto; padding: 0 16px 40px; color: var(--m
         <div><h3>Why</h3><ul class="reasons" id="v-reasons"></ul></div>
         <div id="cond-wrap"><h3>Before you bid</h3><ul class="checklist" id="v-conditions"></ul></div>
       </div>
+      <p class="warn hidden" id="v-warn" role="status"></p>
       <p class="note" id="v-note"></p>
+      <div class="export">
+        <a class="btn" id="dl-xlsx" href="#" download>Download the checklist</a>
+        <a class="linkish" id="dl-csv" href="#" download>or as CSV</a>
+        <span class="meta">Excel: every requirement with its quote, page, check and your status, a Done column to tick off, and a summary sheet with the call.</span>
+      </div>
     </section>
 
     <section class="sheet hidden" id="deciding-box">
@@ -328,7 +347,16 @@ const SAMPLE = {
 const STATUS = { "fails": ["stop", "fails"], "not stated": ["cond", "to confirm"], "met": ["go", "met"], "routine": ["plain", "routine"] };
 const FIRST_ROWS = 25;
 let findReady = false;
-let state = { runId: null, pdfBase: null, reqs: [], byId: {}, status: {}, page: null, all: false };
+let state = { runId: null, pdfBase: null, exportBase: null, reqs: [], byId: {}, status: {}, page: null, all: false };
+// [1, 2, 3, 7] -> "1 to 3, 7"
+const pageList = (nums) => {
+  const runs = [];
+  for (const n of [...new Set(nums)].sort((a, b) => a - b)) {
+    if (runs.length && n === runs[runs.length - 1][1] + 1) runs[runs.length - 1][1] = n; else runs.push([n, n]);
+  }
+  return runs.map(([a, b]) => a === b ? String(a) : b === a + 1 ? a + ", " + b : a + " to " + b).join(", ");
+};
+const plural = (n, word) => n + " " + word + (n === 1 ? "" : "s");
 
 (function theme() {
   const root = document.documentElement;
@@ -348,6 +376,7 @@ fetch("/api/health").then(r => r.json()).then(h => {
   const e = $("engine"); e.replaceChildren();
   if (h.fake_llm) e.append(el("span", { class: "chip cond", text: "offline demo, no model calls" }));
   e.append(el("b", { text: shortModel(h.reader_model) }), " reads, ", el("b", { text: shortModel(h.decider_model) }), " decides");
+  if (h.vision_model && h.max_scan_pages) e.append(", ", el("b", { text: shortModel(h.vision_model) }), " reads scans");
   findReady = !!h.find_ready;
   if (!h.find_ready) $("find-hint").textContent = "Search is switched off on this server. Paste a PDF link below instead.";
   else $("find-hint").textContent = "Search the public web with Tavily. Government PDFs come first; for a web page, Lucius can find its tender documents.";
@@ -423,8 +452,8 @@ $("example-btn").addEventListener("click", async () => {
     const r = await fetch("/api/example");
     if (!r.ok) throw new Error("The example is not available.");
     const res = await r.json();
-    state.runId = null; state.pdfBase = res.pdf_url;
-    startView(); drawLedger(res.stats.pages_total, res.stats.empty_page_numbers || []);
+    state.runId = null; state.pdfBase = res.pdf_url; state.exportBase = "/api/example/checklist";
+    startView(); drawLedger(res.stats.pages_total, res.stats.empty_page_numbers || [], res.stats.scanned_pages || [], res.stats.scan_skipped_pages || []);
     for (let p = 1; p <= res.stats.pages_total; p++) markTile(p, "read");
     $("progress-h").textContent = "Read";
     setCounts(res.stats.pages_read + " / " + res.stats.pages_total, res.stats.requirements, res.stats.verified + " / " + res.stats.requirements);
@@ -447,10 +476,12 @@ function startView() {
   if (top < 0 || top > innerHeight * 0.5) $("progress-box").scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" });
 }
 
-function drawLedger(total, blank) {
+function drawLedger(total, blank, scans = [], overCap = []) {
   const tiles = [];
   for (let p = 1; p <= total; p++) {
-    const t = el("button", { class: "tile" + (blank.includes(p) ? " blank" : ""), type: "button", "data-page": String(p), "aria-label": "Page " + p, title: "Page " + p, tabindex: "-1" });
+    const cls = blank.includes(p) ? " blank" : overCap.includes(p) ? " scan skipped" : scans.includes(p) ? " scan" : "";
+    const label = "Page " + p + (overCap.includes(p) ? ": scan over the cap, not read" : scans.includes(p) ? ": scanned page, no text layer" : "");
+    const t = el("button", { class: "tile" + cls, type: "button", "data-page": String(p), "aria-label": label, title: label, tabindex: "-1" });
     t.addEventListener("click", () => { if (t.classList.contains("has")) pickPage(p); });
     tiles.push(t);
   }
@@ -478,10 +509,22 @@ $("run-form").addEventListener("submit", async (e) => {
     const finish = () => { es.close(); done(); };
     es.addEventListener("stage", ev => log(JSON.parse(ev.data).message));
     es.addEventListener("pages", ev => {
-      const d = JSON.parse(ev.data);
-      drawLedger(d.total, d.empty_pages || []);
+      const d = JSON.parse(ev.data), scans = d.scans || [], over = d.scans_over_cap || [];
+      drawLedger(d.total, d.empty_pages || [], scans, over);
       setCounts("0 / " + d.total, "0", "–");
-      log(d.total + " pages in " + d.chunks + " parts" + (d.empty ? "; " + d.empty + " pages have no text layer (scans) and cannot be read" : ""));
+      log(d.total + " pages in " + d.chunks + " parts" + (d.empty ? "; " + plural(d.empty, "page") + " blank, with no text" : ""));
+      if (scans.length) log(plural(scans.length, "page") + " are scans with no text layer (" + pageList(scans) + "): they are read from the page image");
+      if (over.length) {
+        const m = d.scan_cap ? "Scan cap reached: a run reads at most " + d.scan_cap + " scanned pages, so pages " + pageList(over) + " will not be read."
+          : "Reading scanned pages is switched off here, so pages " + pageList(over) + " will not be read.";
+        log(m);
+      }
+    });
+    es.addEventListener("scan", ev => {
+      const d = JSON.parse(ev.data);
+      markTile(d.page, d.ok ? "read" : "failed");
+      log(d.ok ? "Page " + d.page + " read from its image" + (d.chars ? "" : ": no readable text on it") + " (" + d.done + " of " + d.total + ")"
+        : "Page " + d.page + ": the vision model could not read the image in two tries (" + d.done + " of " + d.total + ")");
     });
     es.addEventListener("progress", ev => {
       const d = JSON.parse(ev.data);
@@ -497,8 +540,13 @@ $("run-form").addEventListener("submit", async (e) => {
       if (d.duplicates_merged) log(d.duplicates_merged + " exact duplicates merged");
       if (d.pages_corrected) log(d.pages_corrected + " page numbers corrected by the quote check");
       if (d.joined) log(d.joined + " quotes join two or three passages of one page; each passage checked word for word");
+      if (d.scanned) log(plural(d.scanned, "requirement") + " from scanned pages: their quotes were checked against the model's transcription of the page image");
     });
-    es.addEventListener("result", ev => { const res = JSON.parse(ev.data).result; $("progress-h").textContent = "Read"; render(res); log("Done"); finish(); });
+    es.addEventListener("result", ev => {
+      const res = JSON.parse(ev.data).result;
+      state.exportBase = "/api/runs/" + state.runId + "/checklist";
+      $("progress-h").textContent = "Read"; render(res); log("Done"); finish();
+    });
     es.addEventListener("error", ev => {
       if (ev.data) {
         const m = JSON.parse(ev.data).message; showError(m); log("Stopped: " + m);
@@ -527,6 +575,10 @@ function checkChip(r) {
   if (r.verified) return el("span", { class: "chip go", text: "found" });
   return el("span", { class: "chip stop", title: "Not found on the page (" + Math.round(r.match_score * 100) + "% match). Check it in the PDF.", text: "not found" });
 }
+function scanChip(r) {
+  if (!r.scanned) return null;
+  return el("span", { class: "chip plain", title: "Page " + r.page + " is a scan with no text layer. The vision model transcribed the page image, and this quote was checked against that transcription, not against a text layer.", text: "scanned page" });
+}
 function statusChip(id) {
   const a = state.status[id];
   if (!a) return el("span", { class: "meta", text: "" });
@@ -547,8 +599,28 @@ function render(res) {
     if (n) { t.classList.add("has", n >= 6 ? "l3" : n >= 3 ? "l2" : "l1"); t.textContent = String(n); t.title = "Page " + p + ": " + n + " requirement" + (n > 1 ? "s" : ""); t.tabIndex = 0; }
   }
   const s = res.stats;
+  const scanned = s.scanned_pages || [], scanFailed = s.scan_failed_pages || [], scanSkipped = s.scan_skipped_pages || [];
+  for (const [nums, cls, what] of [[scanned, "", "scanned, read from the page image"], [scanFailed, "failed", "scanned, the vision model could not read it"], [scanSkipped, "skipped", "scan over the cap, not read"]]) {
+    for (const p of nums) {
+      const t = tile(p); if (!t) continue;
+      t.classList.add("scan"); if (cls) t.classList.add(cls);
+      const n = perPage[p] || 0;
+      t.title = "Page " + p + ": " + what + (n ? ", " + plural(n, "requirement") : "");
+      t.setAttribute("aria-label", t.title);
+    }
+  }
   $("c-reqs").textContent = s.requirements;  // after exact duplicates are merged, so it matches the quote count
+  const vision = shortModel(res.vision_model) || "the vision model";
+  const warn = [
+    scanSkipped.length ? (s.scan_cap ? "Scan cap reached: a run reads at most " + s.scan_cap + " scanned pages, so pages " + pageList(scanSkipped) + " were not read."
+      : "Reading scanned pages is switched off here, so scanned pages " + pageList(scanSkipped) + " were not read.") : null,
+    scanFailed.length ? "Scanned " + (scanFailed.length > 1 ? "pages " : "page ") + pageList(scanFailed) + " could not be read: " + vision + " failed twice. Nothing from " + (scanFailed.length > 1 ? "them" : "it") + " is in the list." : null,
+  ].filter(Boolean);
+  $("v-warn").textContent = warn.length ? warn.join(" ") + " Check those pages in the PDF yourself." : "";
+  $("v-warn").classList.toggle("hidden", !warn.length);
+  for (const [id, ext] of [["dl-xlsx", "xlsx"], ["dl-csv", "csv"]]) $(id).href = state.exportBase ? state.exportBase + "." + ext : "#";
   const notes = [res.decision_note,
+    scanned.length ? (scanned.length > 1 ? "Pages " : "Page ") + pageList(scanned) + (scanned.length > 1 ? " are scans" : " is a scan") + " with no text layer: " + vision + " read " + (scanned.length > 1 ? "them" : "it") + " from the page image, and quotes there were checked against that transcription." : null,
     s.chunks_failed.length ? s.chunks_failed.length + " parts could not be read: " + s.chunks_failed.join("; ") : null,
     s.malformed_items ? s.malformed_items + " items from the model were not usable" : null,
     s.duplicates_merged ? s.duplicates_merged + " exact duplicates merged" : null,
@@ -588,7 +660,7 @@ function render(res) {
           el("div", { class: "req", text: x.requirement }),
           el("div", { class: "why", text: x.why }),
           el("div", { class: "tags" }, el("span", { class: "chip " + STATUS[x.status][0], text: STATUS[x.status][1] }),
-            x.hard && someEasy ? el("span", { class: "chip plain", text: "hard to obtain" }) : null, checkChip(r))));
+            x.hard && someEasy ? el("span", { class: "chip plain", text: "hard to obtain" }) : null, checkChip(r), scanChip(r))));
     });
     $("deciding").replaceChildren(...dec);
     $("deciding-sub").textContent = d.unmet_total > dec.length
@@ -636,7 +708,7 @@ function drawTable() {
     el("td", {}, pageLink(r.page, "pg")),
     el("td", {}, el("div", { text: r.requirement }), el("div", { class: "rid", text: r.id + " | " + r.category + " | " + (r.mandatory ? "mandatory" : "optional") })),
     el("td", { class: "q", text: r.quote }),
-    el("td", {}, checkChip(r)),
+    el("td", {}, el("div", { class: "tags-inline" }, checkChip(r), scanChip(r))),
     el("td", {}, statusChip(r.id)))));
 }
 for (const id of ["f-text", "f-cat", "f-mand", "f-status"]) $(id).addEventListener("input", drawTable);

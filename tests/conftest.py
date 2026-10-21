@@ -30,6 +30,31 @@ def make_pdf(pages: list[str]) -> bytes:
     return data
 
 
+def make_scanned_pdf(kinds: list[tuple[str, str]], dpi: int = 100) -> bytes:
+    """A PDF built page by page as a scanner and a portal would leave it. Each item is (kind, text):
+    "text" a normal text layer; "scan" the text drawn, rendered to an image, and only the image kept;
+    "stamp" a scan with a short text layer on top (a portal's page number); "logo" a small image and
+    no text; "blank" nothing."""
+    out = pymupdf.open()
+    for kind, text in kinds:
+        page = out.new_page(width=595, height=842)
+        if kind == "text":
+            page.insert_textbox(pymupdf.Rect(50, 50, 545, 800), text, fontsize=11)
+        elif kind in ("scan", "stamp", "logo"):
+            src = pymupdf.open()
+            drawn = src.new_page(width=595, height=842)
+            drawn.insert_textbox(pymupdf.Rect(50, 50, 545, 800), text, fontsize=11)
+            image = drawn.get_pixmap(dpi=dpi, colorspace=pymupdf.csGRAY).tobytes("png")
+            src.close()
+            where = pymupdf.Rect(40, 40, 140, 90) if kind == "logo" else page.rect
+            page.insert_image(where, stream=image)
+            if kind == "stamp":
+                page.insert_text((500, 830), "Page 4 of 9", fontsize=8)
+    data = out.tobytes()
+    out.close()
+    return data
+
+
 @pytest.fixture
 def tender_pdf() -> bytes:
     return make_pdf(TENDER_PAGES)
