@@ -1,0 +1,886 @@
+{
+ "recorded_at": "2026-10-22T09:38:45+00:00",
+ "base_url": "https://api.tokenfactory.nebius.com/v1/",
+ "profile": "Pipeline contractor registered at grade 6. We lay HDPE pipes; no bank guarantee facility yet.",
+ "calls": [
+  {
+   "key": "assessments | Requirements to assess (6): R1, R2, R3, R4, R5, R6",
+   "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+   "request": {
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "temperature": 0.0,
+    "max_tokens": 16384,
+    "response_format": {
+     "type": "json_schema",
+     "json_schema": {
+      "name": "assessments",
+      "schema": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "assessments"
+       ],
+       "properties": {
+        "assessments": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+           "id",
+           "status",
+           "hard",
+           "why"
+          ],
+          "properties": {
+           "id": {
+            "type": "string"
+           },
+           "status": {
+            "type": "string",
+            "enum": [
+             "fails",
+             "not stated",
+             "met",
+             "routine"
+            ]
+           },
+           "hard": {
+            "type": "boolean"
+           },
+           "why": {
+            "type": "string"
+           }
+          }
+         }
+        }
+       }
+      },
+      "strict": true
+     }
+    },
+    "reasoning_effort": "low",
+    "text": [
+     {
+      "role": "system",
+      "text": "You check a company against some of a public tender's mandatory requirements.\nReturn exactly one assessment for EVERY requirement id listed, in the order listed:\n- \"fails\": the profile shows the company cannot meet it (wrong line of work, wrong grade or\n  class, wrong country or region, too small, a licence it cannot get in time).\n- \"not stated\": it needs a certificate, registration, document, capacity or experience the\n  profile does not mention. The company must confirm or obtain it.\n- \"met\": the profile says it is met.\n- \"routine\": a form, signature, declaration, price format or submission rule any eligible\n  bidder completes while preparing the bid.\nhard: true if meeting it takes weeks, money or a third party (an approval, a certification, a\n  guarantee, a bank rating, proven experience, a site visit); false for papers a registered\n  company normally has or can fill in.\nwhy: one short plain sentence about THIS company (\"\" is fine for routine).\nUse only the requirements and the profile. Never invent facts. Return JSON only."
+     },
+     {
+      "role": "user",
+      "text": "Company profile:\n<<<\nPipeline contractor registered at grade 6. We lay HDPE pipes; no bank guarantee facility yet.\n>>>\n\nThe tender buys: The tender buys construction works for a bulk water supply pipeline for the City of Example Water Department.\n\nRequirements to assess (6): R1, R2, R3, R4, R5, R6\n[R1] page 2 | verified | eligibility\n  Requirement: Bidder must be registered with the national contractor board at grade 7 or higher.\n  Quote: \"Bidders must be registered with the national contractor board at grade 7 or higher.\"\n[R2] page 2 | verified | eligibility\n  Requirement: Bidder must have completed at least three pipeline projects of similar size in the past five years.\n  Quote: \"The bidder shall have completed at least three pipeline projects of similar size in the past five years.\"\n[R3] page 3 | verified | commercial\n  Requirement: A bid guarantee of 2% of the bid price must be submitted with the bid.\n  Quote: \"A bid guarantee of 2% of the bid price must be submitted with the bid.\"\n[R4] page 3 | verified | commercial\n  Requirement: Prices shall be quoted in local currency including VAT.\n  Quote: \"Prices shall be quoted in local currency including VAT.\"\n[R5] page 4 | verified | submission\n  Requirement: Bids must be submitted no later than 30 November 2026 at 12:00 local time.\n  Quote: \"Bids must be submitted no later than 30 November 2026 at 12:00 local time.\"\n[R6] page 4 | verified | submission\n  Requirement: Late bids will be rejected without opening.\n  Quote: \"Late bids will be rejected without opening.\""
+     }
+    ],
+    "images": []
+   },
+   "status": 200,
+   "reply": {
+    "id": "chatcmpl-4fddca252b4e265e32495f51725d0739",
+    "choices": [
+     {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+       "content": "{\n  \"assessments\": [\n    {\n      \"id\": \"R1\",\n      \"status\": \"fails\",\n      \"hard\": true,\n      \"why\": \"Company is registered at grade 6, below the required grade 7.\"\n    },\n    {\n      \"id\": \"R2\",\n      \"status\": \"not stated\",\n      \"hard\": true,\n      \"why\": \"Profile does not mention any completed pipeline projects of similar size.\"\n    },\n    {\n      \"id\": \"R3\",\n      \"status\": \"fails\",\n      \"hard\": true,\n      \"why\": \"Company states it has no bank guarantee facility to provide the required bid guarantee.\"\n    },\n    {\n      \"id\": \"R4\",\n      \"status\": \"routine\",\n      \"hard\": false,\n      \"why\": \"Pricing in local currency with VAT is a standard bid preparation step.\"\n    },\n    {\n      \"id\": \"R5\",\n      \"status\": \"routine\",\n      \"hard\": false,\n      \"why\": \"Submitting by the deadline is a standard bid submission rule.\"\n    },\n    {\n      \"id\": \"R6\",\n      \"status\": \"routine\",\n      \"hard\": false,\n      \"why\": \"Avoiding late submission is a standard bid submission rule.\"\n    }\n  ]\n}",
+       "refusal": null,
+       "role": "assistant",
+       "annotations": null,
+       "audio": null,
+       "function_call": null,
+       "tool_calls": null,
+       "reasoning_content": "The user wants me to assess a company profile against 6 tender requirements. I need to return exactly one assessment for each requirement id in order (R1-R6), with fields: assessment (fails/not stated/met/routine), hard (true/false), why (short sentence).\n\nCompany profile: \"Pipeline contractor registered at grade 6. We lay HDPE pipes; no bank guarantee facility yet.\"\n\nRequirements:\nR1: Must be registered at grade 7 or higher. Company is grade 6 -> fails.\nR2: Must have completed at least three pipeline projects of similar size in past five years. Profile doesn't mention any completed projects -> not stated.\nR3: Bid guarantee of 2% of bid price must be submitted with bid. Company says \"no bank guarantee facility yet\" -> fails (cannot provide guarantee).\nR4: Prices quoted in local currency including VAT. This is a routine submission rule -> routine.\nR5: Bids submitted by deadline. This is a routine submission rule -> routine.\nR6: Late bids rejected. This is a statement of consequence, not a requirement on bidder per se, but it's a submission rule. Could be routine. However, it's not something the bidder \"does\", it's a rule. But the assessment categories: \"routine\": a form, signature, declaration, price format or submission rule any eligible bidder completes while preparing the bid. This is a submission rule, but it's not something the bidder completes; it's a rule they must adhere to. However, the requirement is \"Late bids will be rejected without opening.\" That's a rule, not an action. The bidder must submit on time (R5). R6 is just a statement. Might be routine as well, but maybe \"met\" if they plan to submit on time? But the profile doesn't mention submission timing. However, it's a rule that applies to all. I'd say routine because it's a submission rule any eligible bidder follows. But the assessment is about the company meeting the requirement. The requirement is \"Late bids will be rejected without opening.\" That's not something the company meets; it's a condition. The company must ensure not late. That's covered by R5. R6 is just a statement. I'll treat as routine.\n\nNow hard: true if meeting it takes weeks, money or third party. For R1: fails, hard? The requirement is grade 7, company is grade 6. To meet would require upgrading grade, which likely takes time/money -> hard true. But the assessment is \"fails\", so hard indicates if meeting it would be hard. The instruction: \"hard: true if meeting it takes weeks, money or a third party\". So for fails, we consider if the company could meet it if they tried. Upgrading grade likely hard -> true.\n\nR2: not stated. To meet would require proven experience (three projects) -> hard true.\n\nR3: fails. Bid guarantee requires bank guarantee facility, which they don't have. Getting a bank guarantee facility takes time/money/third party -> hard true.\n\nR4: routine -> hard false (just formatting).\n\nR5: routine -> hard false.\n\nR6: routine -> hard false.\n\nWhy: short sentence about THIS company.\n\nLet's craft.\n\nR1: fails, hard true, why: \"Company is registered at grade 6, below the required grade 7.\"\nR2: not stated, hard true, why: \"Profile does not mention any completed pipeline projects of similar size.\"\nR3: fails, hard true, why: \"Company states it has no bank guarantee facility to provide the required bid guarantee.\"\nR4: routine, hard false, why: \"Pricing in local currency with VAT is a standard bid preparation step.\"\nR5: routine, hard false, why: \"Submitting by the deadline is a standard bid submission rule.\"\nR6: routine, hard false, why: \"Avoiding late submission is a standard bid submission rule.\"\n\nCheck: The profile says \"Pipeline contractor registered at grade 6. We lay HDPE pipes; no bank guarantee facility yet.\" It doesn't mention country, but tender is for City of Example Water Department. No info about location. But requirements don't mention country. So fine.\n\nReturn JSON only. Must be an array of objects? The instruction: \"Return exactly one assessment for EVERY requirement id listed, in the order listed\". Probably a JSON array of objects with keys: requirement, assessment, hard, why. Or maybe just an object with keys R1... but \"exactly one assessment for EVERY requirement id listed\" suggests an array. I'll output an array of objects each with \"requirement\": \"R1\", \"assessment\": \"...\", \"hard\": true/false, \"why\": \"...\".\n\nLet's produce."
+      },
+      "stop_reason": null,
+      "token_ids": null,
+      "routed_experts": null
+     }
+    ],
+    "created": 1792661920,
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "object": "chat.completion",
+    "moderation": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev1+g93e2486b7-tp8-062d09e8",
+    "usage": {
+     "completion_tokens": 1280,
+     "prompt_tokens": 644,
+     "total_tokens": 1924,
+     "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 1004,
+      "rejected_prediction_tokens": null
+     },
+     "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0,
+      "multimodal_tokens": null
+     },
+     "prompt_cache_hit_tokens": 0,
+     "prompt_cache_miss_tokens": 644
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "metrics": null
+   },
+   "attempt": 1
+  },
+  {
+   "key": "image | Page 2 of the tender. Transcribe it.",
+   "model": "nvidia/Nemotron-3.5-Super-VL",
+   "request": {
+    "model": "nvidia/Nemotron-3.5-Super-VL",
+    "temperature": 0.0,
+    "max_tokens": 8192,
+    "chat_template_kwargs": {
+     "enable_thinking": false
+    },
+    "text": [
+     {
+      "role": "system",
+      "text": "You transcribe one scanned page of a public tender document, for a reader that checks quotes word for word.\nCopy every word exactly as printed, in reading order, line by line: headings, paragraphs, numbered and bulleted items, table rows (one row per line, cells separated by \" | \"), stamps, headers and footers.\nLeave out line numbers printed in the margin (legal texts number every line); keep the numbering of items and clauses.\nDo not translate, summarise, correct spelling or add anything that is not on the page. Write [illegible] for a word you cannot read.\nIf the page has no readable text, reply with exactly: NO TEXT\nReply with the transcription only."
+     },
+     {
+      "role": "user",
+      "text": "Page 2 of the tender. Transcribe it."
+     }
+    ],
+    "images": [
+     {
+      "base64_chars": 24680,
+      "sha256": "959619f2f8ed81762227b4576b20d85c1f6fa4af571ec9b6b0dd96936745c422"
+     }
+    ]
+   },
+   "status": 200,
+   "reply": {
+    "id": "chatcmpl-c6fdfffab960affb856481a8606f1813",
+    "choices": [
+     {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+       "content": "Eligibility\nBidders must be registered with the national contractor board at grade 7 or higher.\nThe bidder shall have completed at least three pipeline projects of similar size in the past five years.",
+       "refusal": null,
+       "role": "assistant",
+       "annotations": null,
+       "audio": null,
+       "function_call": null,
+       "tool_calls": null,
+       "reasoning_content": null
+      },
+      "stop_reason": null,
+      "token_ids": null,
+      "routed_experts": null
+     }
+    ],
+    "created": 1792661912,
+    "model": "nvidia/Nemotron-3.5-Super-VL",
+    "object": "chat.completion",
+    "moderation": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev1+g1bed5fc81-tp2-9705eecb",
+    "usage": {
+     "completion_tokens": 43,
+     "prompt_tokens": 2320,
+     "total_tokens": 2363,
+     "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 0,
+      "rejected_prediction_tokens": null
+     },
+     "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0,
+      "created_cache_tokens": 0,
+      "multimodal_tokens": {
+       "image": 2147
+      }
+     }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+   },
+   "attempt": 1
+  },
+  {
+   "key": "image | Page 3 of the tender. Transcribe it.",
+   "model": "nvidia/Nemotron-3.5-Super-VL",
+   "request": {
+    "model": "nvidia/Nemotron-3.5-Super-VL",
+    "temperature": 0.0,
+    "max_tokens": 8192,
+    "chat_template_kwargs": {
+     "enable_thinking": false
+    },
+    "text": [
+     {
+      "role": "system",
+      "text": "You transcribe one scanned page of a public tender document, for a reader that checks quotes word for word.\nCopy every word exactly as printed, in reading order, line by line: headings, paragraphs, numbered and bulleted items, table rows (one row per line, cells separated by \" | \"), stamps, headers and footers.\nLeave out line numbers printed in the margin (legal texts number every line); keep the numbering of items and clauses.\nDo not translate, summarise, correct spelling or add anything that is not on the page. Write [illegible] for a word you cannot read.\nIf the page has no readable text, reply with exactly: NO TEXT\nReply with the transcription only."
+     },
+     {
+      "role": "user",
+      "text": "Page 3 of the tender. Transcribe it."
+     }
+    ],
+    "images": [
+     {
+      "base64_chars": 22040,
+      "sha256": "e3c1a93271361ed1d79db9db1fb28aa6779338e086a4d87aaf5c16ebf38fbc87"
+     }
+    ]
+   },
+   "status": 200,
+   "reply": {
+    "id": "chatcmpl-15b632bdcaf0e2b978ca9d39126aa06a",
+    "choices": [
+     {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+       "content": "Commercial\nA bid guarantee of 2% of the bid price must be submitted with the bid.\nPrices shall be quoted in local currency including VAT.\n\nPage 4 of 9",
+       "refusal": null,
+       "role": "assistant",
+       "annotations": null,
+       "audio": null,
+       "function_call": null,
+       "tool_calls": null,
+       "reasoning_content": null
+      },
+      "stop_reason": null,
+      "token_ids": null,
+      "routed_experts": null
+     }
+    ],
+    "created": 1792661913,
+    "model": "nvidia/Nemotron-3.5-Super-VL",
+    "object": "chat.completion",
+    "moderation": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev1+g1bed5fc81-tp2-9705eecb",
+    "usage": {
+     "completion_tokens": 39,
+     "prompt_tokens": 2320,
+     "total_tokens": 2359,
+     "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 0,
+      "rejected_prediction_tokens": null
+     },
+     "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0,
+      "created_cache_tokens": 0,
+      "multimodal_tokens": {
+       "image": 2147
+      }
+     }
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+   },
+   "attempt": 1
+  },
+  {
+   "key": "requirements | Tender pages 1 to 4.",
+   "model": "nvidia/nemotron-3-super-120b-a12b",
+   "request": {
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "temperature": 0.0,
+    "max_tokens": 16384,
+    "response_format": {
+     "type": "json_schema",
+     "json_schema": {
+      "name": "requirements",
+      "schema": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "requirements"
+       ],
+       "properties": {
+        "requirements": {
+         "type": "array",
+         "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+           "requirement",
+           "quote",
+           "page",
+           "category",
+           "mandatory"
+          ],
+          "properties": {
+           "requirement": {
+            "type": "string"
+           },
+           "quote": {
+            "type": "string"
+           },
+           "page": {
+            "type": "integer"
+           },
+           "category": {
+            "type": "string",
+            "enum": [
+             "eligibility",
+             "technical",
+             "commercial",
+             "legal",
+             "submission",
+             "other"
+            ]
+           },
+           "mandatory": {
+            "type": "boolean"
+           }
+          }
+         }
+        }
+       }
+      },
+      "strict": true
+     }
+    },
+    "reasoning_effort": "low",
+    "text": [
+     {
+      "role": "system",
+      "text": "You read public tender documents for a company deciding whether to bid.\nFrom the pages given, list every requirement a bidder must meet, every document or certificate\nthey must provide, and every rule of the submission (deadline, format, place, validity, guarantees).\n\nFor each item return:\n- requirement: one plain-English sentence saying what the bidder must do or have.\n- quote: text copied VERBATIM from the page that states it. One contiguous span, at most 40 words.\n  Do not paraphrase, fix spelling, skip words in the middle or join text from different places.\n  When a requirement sits in a list, quote the list item itself rather than the lead-in plus the item.\n- page: the number from the \"=== PAGE n ===\" header of the page the quote is on.\n- category: eligibility, technical, commercial, legal, submission or other.\n- mandatory: true if the text makes it compulsory (must, shall, required, will be disqualified);\n  false if it is optional, preferred or scored only.\n\nOnly use the pages given. Never invent requirements. If there are none, return an empty list.\nReturn JSON only."
+     },
+     {
+      "role": "user",
+      "text": "Tender pages 1 to 4.\n\n=== PAGE 1 ===\nInvitation to Tender No. W-2026-14\nCity of Example Water Department\nConstruction of a bulk water supply pipeline.\n\n=== PAGE 2 ===\nEligibility\nBidders must be registered with the national contractor board at grade 7 or higher.\nThe bidder shall have completed at least three pipeline projects of similar size in the past five years.\n\n=== PAGE 3 ===\nCommercial\nA bid guarantee of 2% of the bid price must be submitted with the bid.\nPrices shall be quoted in local currency including VAT.\n\nPage 4 of 9\n\n=== PAGE 4 ===\nSubmission\nBids must be submitted no later than 30 November 2026 at 12:00 local time.\nLate bids will be rejected without opening.\n\n=== END OF PAGES ==="
+     }
+    ],
+    "images": []
+   },
+   "status": 200,
+   "reply": {
+    "id": "chatcmpl-b10828b7b1dbe1bf6e9481bcc14a8213",
+    "choices": [
+     {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+       "content": "{\"requirements\": [{\"requirement\": \"Bidder must be registered with the national contractor board at grade 7 or higher.\", \"quote\": \"Bidders must be registered with the national contractor board at grade 7 or higher.\", \"page\": 2, \"category\": \"eligibility\", \"mandatory\": true}, {\"requirement\": \"Bidder must have completed at least three pipeline projects of similar size in the past five years.\", \"quote\": \"The bidder shall have completed at least three pipeline projects of similar size in the past five years.\", \"page\": 2, \"category\": \"eligibility\", \"mandatory\": true}, {\"requirement\": \"A bid guarantee of 2% of the bid price must be submitted with the bid.\", \"quote\": \"A bid guarantee of 2% of the bid price must be submitted with the bid.\", \"page\": 3, \"category\": \"commercial\", \"mandatory\": true}, {\"requirement\": \"Prices shall be quoted in local currency including VAT.\", \"quote\": \"Prices shall be quoted in local currency including VAT.\", \"page\": 3, \"category\": \"commercial\", \"mandatory\": true}, {\"requirement\": \"Bids must be submitted no later than 30 November 2026 at 12:00 local time.\", \"quote\": \"Bids must be submitted no later than 30 November 2026 at 12:00 local time.\", \"page\": 4, \"category\": \"submission\", \"mandatory\": true}, {\"requirement\": \"Late bids will be rejected without opening.\", \"quote\": \"Late bids will be rejected without opening.\", \"page\": 4, \"category\": \"submission\", \"mandatory\": true}]}",
+       "refusal": null,
+       "role": "assistant",
+       "annotations": null,
+       "audio": null,
+       "function_call": null,
+       "tool_calls": null,
+       "reasoning": "We need output JSON array of items. List all requirements:\n\n- Eligibility: registered with national contractor board grade >=7.\n- Completed at least three pipeline projects similar size past five years.\n- Commercial: submit bid guarantee 2% of bid price.\n- Prices quoted in local currency including VAT.\n- Submission: bids must be submitted no later than 30 Nov 2026 12:00 local time.\n- Late bids rejected.\n\nAll mandatory? Likely yes except maybe quoting prices includes VAT is mandatory. All seem mandatory.\n\nProvide quotes verbatim up to 40 words.\n\nLet's craft.",
+       "reasoning_content": "We need output JSON array of items. List all requirements:\n\n- Eligibility: registered with national contractor board grade >=7.\n- Completed at least three pipeline projects similar size past five years.\n- Commercial: submit bid guarantee 2% of bid price.\n- Prices quoted in local currency including VAT.\n- Submission: bids must be submitted no later than 30 Nov 2026 12:00 local time.\n- Late bids rejected.\n\nAll mandatory? Likely yes except maybe quoting prices includes VAT is mandatory. All seem mandatory.\n\nProvide quotes verbatim up to 40 words.\n\nLet's craft."
+      },
+      "stop_reason": null,
+      "token_ids": null,
+      "routed_experts": null
+     }
+    ],
+    "created": 1792661913,
+    "model": "nvidia/nemotron-3-super-120b-a12b",
+    "object": "chat.completion",
+    "moderation": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev1+g5001743e3-tp2-05adddbc",
+    "usage": {
+     "completion_tokens": 508,
+     "prompt_tokens": 457,
+     "total_tokens": 965,
+     "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 130,
+      "rejected_prediction_tokens": null
+     },
+     "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0,
+      "created_cache_tokens": 0,
+      "multimodal_tokens": null
+     },
+     "prompt_cache_hit_tokens": 0,
+     "prompt_cache_miss_tokens": 457
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "ec_transfer_params": null,
+    "metrics": null
+   },
+   "attempt": 1
+  },
+  {
+   "key": "scope",
+   "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+   "request": {
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "temperature": 0.0,
+    "max_tokens": 16384,
+    "response_format": {
+     "type": "json_schema",
+     "json_schema": {
+      "name": "scope",
+      "schema": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "title",
+        "buyer",
+        "buys",
+        "fit",
+        "why"
+       ],
+       "properties": {
+        "title": {
+         "type": "string"
+        },
+        "buyer": {
+         "type": "string"
+        },
+        "buys": {
+         "type": "string"
+        },
+        "fit": {
+         "type": "string",
+         "enum": [
+          "fits",
+          "partly",
+          "outside"
+         ]
+        },
+        "why": {
+         "type": "string"
+        }
+       }
+      },
+      "strict": true
+     }
+    },
+    "reasoning_effort": "low",
+    "text": [
+     {
+      "role": "system",
+      "text": "You read the first pages of a public tender for a company deciding whether to bid.\nReturn:\n- title: the tender's title, copied from the pages (\"\" if none is given).\n- buyer: the buying organisation's name, copied from the pages (\"\" if none is given).\n- buys: one plain sentence on what the tender buys (goods, works or services, and where).\n- fit: \"fits\" if that is the company's line of work, \"partly\" if only some of it is,\n  \"outside\" if it is not the company's line of work.\n- why: one plain sentence on the fit, about THIS company.\nUse only the pages and the profile. Never invent names, numbers or dates. Return JSON only."
+     },
+     {
+      "role": "user",
+      "text": "Company profile:\n<<<\nPipeline contractor registered at grade 6. We lay HDPE pipes; no bank guarantee facility yet.\n>>>\n\n=== PAGE 1 ===\nInvitation to Tender No. W-2026-14\nCity of Example Water Department\nConstruction of a bulk water supply pipeline.\n=== PAGE 2 ===\nEligibility\nBidders must be registered with the national contractor board at grade 7 or higher.\nThe bidder shall have completed at least three pipeline projects of similar size in the past five years.\n=== PAGE 3 ===\nCommercial\nA bid guarantee of 2% of the bid price must be submitted with the bid.\nPrices shall be quoted in local currency including VAT.\n\nPage 4 of 9\n=== END OF PAGES ==="
+     }
+    ],
+    "images": []
+   },
+   "status": 200,
+   "reply": {
+    "id": "chatcmpl-f49b6ca606b468901bac521b3d24d8de",
+    "choices": [
+     {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+       "content": "{\n  \"title\": \"Construction of a bulk water supply pipeline\",\n  \"buyer\": \"City of Example Water Department\",\n  \"buys\": \"The tender buys construction works for a bulk water supply pipeline for the City of Example Water Department.\",\n  \"fit\": \"outside\",\n  \"why\": \"The company is registered at grade 6, below the required grade 7, and lacks a bank guarantee facility for the bid guarantee.\"\n}",
+       "refusal": null,
+       "role": "assistant",
+       "annotations": null,
+       "audio": null,
+       "function_call": null,
+       "tool_calls": null,
+       "reasoning_content": "The user wants me to analyze the tender pages against the company profile and return a JSON with specific fields.\n\nCompany profile: Pipeline contractor registered at grade 6. They lay HDPE pipes; no bank guarantee facility yet.\n\nPages:\n- Page 1: Invitation to Tender No. W-2026-14, City of Example Water Department, Construction of a bulk water supply pipeline.\n- Page 2: Eligibility: Bidders must be registered with national contractor board at grade 7 or higher. Must have completed at least three pipeline projects of similar size in past five years.\n- Page 3: Commercial: Bid guarantee of 2% of bid price must be submitted with bid. Prices quoted in local currency including VAT.\n\nWe need to extract:\n- title: from pages, \"Construction of a bulk water supply pipeline\" or \"Invitation to Tender No. W-2026-14\"? The title is likely \"Construction of a bulk water supply pipeline\". The invitation number is separate. The page says \"Invitation to Tender No. W-2026-14\" and \"Construction of a bulk water supply pipeline.\" I'll take the title as \"Construction of a bulk water supply pipeline\".\n- buyer: \"City of Example Water Department\"\n- buys: one plain sentence on what the tender buys (goods, works or services, and where). The tender is for construction of a bulk water supply pipeline. So: \"The tender buys construction works for a bulk water supply pipeline for the City of Example Water Department.\"\n- fit: \"fits\", \"partly\", or \"outside\". The company is grade 6, but requirement is grade 7 or higher. Also they have no bank guarantee facility, but bid guarantee of 2% is required. They lay HDPE pipes, but the tender doesn't specify pipe material. However, the eligibility requires grade 7+, which they don't meet. Also they need three similar projects in past five years; we don't know if they have that. But the grade mismatch is a clear disqualifier. So fit is \"outside\" because they don't meet the grade requirement. Also no bank guarantee facility. So \"outside\".\n- why: one plain sentence on the fit, about THIS company. \"The company is registered at grade 6, below the required grade 7, and lacks a bank guarantee facility for the bid guarantee.\"\n\nReturn JSON only.\n\nLet's construct JSON."
+      },
+      "stop_reason": null,
+      "token_ids": null,
+      "routed_experts": null
+     }
+    ],
+    "created": 1792661918,
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "object": "chat.completion",
+    "moderation": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev1+g93e2486b7-tp8-062d09e8",
+    "usage": {
+     "completion_tokens": 605,
+     "prompt_tokens": 336,
+     "total_tokens": 941,
+     "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 511,
+      "rejected_prediction_tokens": null
+     },
+     "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0,
+      "multimodal_tokens": null
+     },
+     "prompt_cache_hit_tokens": 0,
+     "prompt_cache_miss_tokens": 336
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "metrics": null
+   },
+   "attempt": 1
+  },
+  {
+   "key": "summary",
+   "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+   "request": {
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "temperature": 0.0,
+    "max_tokens": 16384,
+    "response_format": {
+     "type": "json_schema",
+     "json_schema": {
+      "name": "summary",
+      "schema": {
+       "type": "object",
+       "additionalProperties": false,
+       "required": [
+        "confidence",
+        "reasons",
+        "conditions"
+       ],
+       "properties": {
+        "confidence": {
+         "type": "number"
+        },
+        "reasons": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        },
+        "conditions": {
+         "type": "array",
+         "items": {
+          "type": "string"
+         }
+        }
+       }
+      },
+      "strict": true
+     }
+    },
+    "reasoning_effort": "low",
+    "text": [
+     {
+      "role": "system",
+      "text": "You explain a bid / no-bid call on a public tender to a company.\nYou get the company profile, the tender's scope, the call, and the requirements the company\nfails or must still confirm, each with an id like [R12].\nReturn:\n- reasons: at most 4 short plain sentences on why the call is what it is; cite at most 3 ids in\n  one sentence.\n- conditions: at most 8 things that must be true or done before bidding, most important first,\n  each citing its ids; group similar documents into one item. Empty for a no-bid call.\n- confidence: 0 to 1, how sure you are that the call is right for this company.\nUse only what you are given. Never invent requirements, numbers or dates. Return JSON only."
+     },
+     {
+      "role": "user",
+      "text": "Company profile:\n<<<\nPipeline contractor registered at grade 6. We lay HDPE pipes; no bank guarantee facility yet.\n>>>\n\nThe tender buys: The tender buys construction works for a bulk water supply pipeline for the City of Example Water Department.\nFit with the company's line of work: outside (The company is registered at grade 6, below the required grade 7, and lacks a bank guarantee facility for the bid guarantee.)\n\nCall: no bid\n\nRequirements the company fails or must confirm (3):\n[R1] fails | hard to obtain | page 2 | Bidder must be registered with the national contractor board at grade 7 or higher. | Company is registered at grade 6, below the required grade 7.\n[R3] fails | hard to obtain | page 3 | A bid guarantee of 2% of the bid price must be submitted with the bid. | Company states it has no bank guarantee facility to provide the required bid guarantee.\n[R2] not stated | hard to obtain | page 2 | Bidder must have completed at least three pipeline projects of similar size in the past five years. | Profile does not mention any completed pipeline projects of similar size."
+     }
+    ],
+    "images": []
+   },
+   "status": 200,
+   "reply": {
+    "id": "chatcmpl-725d79a7ac6be17c76094d5100ed9dbf",
+    "choices": [
+     {
+      "finish_reason": "stop",
+      "index": 0,
+      "logprobs": null,
+      "message": {
+       "content": "{\n  \"confidence\": 0.95,\n  \"reasons\": [\n    \"The company is registered at grade 6, below the mandatory grade 7 [R1].\",\n    \"It lacks a bank guarantee facility to provide the required 2% bid guarantee [R3].\",\n    \"No evidence shows three similar pipeline projects completed in the last five years [R2].\"\n  ],\n  \"conditions\": []\n}",
+       "refusal": null,
+       "role": "assistant",
+       "annotations": null,
+       "audio": null,
+       "function_call": null,
+       "tool_calls": null,
+       "reasoning_content": "The user wants me to analyze a no-bid call for a pipeline contractor. Let me review the information:\n\nCompany profile: Pipeline contractor registered at grade 6, lays HDPE pipes, no bank guarantee facility.\n\nTender: Construction works for bulk water supply pipeline for City of Example Water Department.\n\nFit assessment: Outside - company is grade 6 (below required grade 7) and lacks bank guarantee facility.\n\nCall: no bid\n\nRequirements:\n- R1: fails - must be registered at grade 7 or higher, company is grade 6\n- R3: fails - bid guarantee of 2% required, company has no bank guarantee facility\n- R2: not stated - must have completed at least 3 pipeline projects of similar size in past 5 years, profile doesn't mention any\n\nI need to produce:\n- reasons: max 4 short plain sentences, cite at most 3 ids per sentence\n- conditions: max 8 things that must be true/done before bidding, most important first, each citing ids; group similar documents; empty for no-bid call\n- confidence: 0-1\n\nSince this is a no-bid call, conditions should be empty array.\n\nReasons: The company fails two hard requirements (grade 7 registration and bid guarantee) and doesn't confirm a third (project experience). These are fundamental eligibility criteria.\n\nConfidence: High, since two hard fails are clear from profile.\n\nLet me craft the response."
+      },
+      "stop_reason": null,
+      "token_ids": null,
+      "routed_experts": null
+     }
+    ],
+    "created": 1792661924,
+    "model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+    "object": "chat.completion",
+    "moderation": null,
+    "service_tier": null,
+    "system_fingerprint": "vllm-0.1.dev1+g93e2486b7-tp8-062d09e8",
+    "usage": {
+     "completion_tokens": 393,
+     "prompt_tokens": 434,
+     "total_tokens": 827,
+     "completion_tokens_details": {
+      "accepted_prediction_tokens": null,
+      "audio_tokens": null,
+      "reasoning_tokens": 301,
+      "rejected_prediction_tokens": null
+     },
+     "prompt_tokens_details": {
+      "audio_tokens": null,
+      "cached_tokens": 0,
+      "multimodal_tokens": null
+     },
+     "prompt_cache_hit_tokens": 0,
+     "prompt_cache_miss_tokens": 434
+    },
+    "prompt_logprobs": null,
+    "prompt_token_ids": null,
+    "prompt_text": null,
+    "kv_transfer_params": null,
+    "metrics": null
+   },
+   "attempt": 1
+  }
+ ],
+ "result": {
+  "source": "W-2026-14.pdf",
+  "pdf_url": null,
+  "profile": "Pipeline contractor registered at grade 6. We lay HDPE pipes; no bank guarantee facility yet.",
+  "reader_model": "nvidia/nemotron-3-super-120b-a12b",
+  "decider_model": "nvidia/Nemotron-3-Ultra-550b-a55b",
+  "vision_model": "nvidia/Nemotron-3.5-Super-VL",
+  "fake_llm": false,
+  "read_at": "2026-10-22T09:38:32+00:00",
+  "stats": {
+   "pages_total": 4,
+   "pages_read": 4,
+   "chunks_total": 1,
+   "chunks_failed": [],
+   "malformed_items": 0,
+   "duplicates_merged": 0,
+   "requirements": 6,
+   "verified": 6,
+   "unverified": 0,
+   "pages_corrected": 0,
+   "joined_quotes": 0,
+   "empty_pages": 0,
+   "empty_page_numbers": [],
+   "scanned_pages": [
+    2,
+    3
+   ],
+   "scan_failed_pages": [],
+   "scan_skipped_pages": [],
+   "scan_cap": 40,
+   "thinking_retries": 0
+  },
+  "requirements": [
+   {
+    "id": "R1",
+    "requirement": "Bidder must be registered with the national contractor board at grade 7 or higher.",
+    "quote": "Bidders must be registered with the national contractor board at grade 7 or higher.",
+    "page": 2,
+    "category": "eligibility",
+    "mandatory": true,
+    "verified": true,
+    "match_score": 1.0,
+    "cited_page": null,
+    "joined": false,
+    "scanned": true,
+    "source_chunk": "pages 1-4"
+   },
+   {
+    "id": "R2",
+    "requirement": "Bidder must have completed at least three pipeline projects of similar size in the past five years.",
+    "quote": "The bidder shall have completed at least three pipeline projects of similar size in the past five years.",
+    "page": 2,
+    "category": "eligibility",
+    "mandatory": true,
+    "verified": true,
+    "match_score": 1.0,
+    "cited_page": null,
+    "joined": false,
+    "scanned": true,
+    "source_chunk": "pages 1-4"
+   },
+   {
+    "id": "R3",
+    "requirement": "A bid guarantee of 2% of the bid price must be submitted with the bid.",
+    "quote": "A bid guarantee of 2% of the bid price must be submitted with the bid.",
+    "page": 3,
+    "category": "commercial",
+    "mandatory": true,
+    "verified": true,
+    "match_score": 1.0,
+    "cited_page": null,
+    "joined": false,
+    "scanned": true,
+    "source_chunk": "pages 1-4"
+   },
+   {
+    "id": "R4",
+    "requirement": "Prices shall be quoted in local currency including VAT.",
+    "quote": "Prices shall be quoted in local currency including VAT.",
+    "page": 3,
+    "category": "commercial",
+    "mandatory": true,
+    "verified": true,
+    "match_score": 1.0,
+    "cited_page": null,
+    "joined": false,
+    "scanned": true,
+    "source_chunk": "pages 1-4"
+   },
+   {
+    "id": "R5",
+    "requirement": "Bids must be submitted no later than 30 November 2026 at 12:00 local time.",
+    "quote": "Bids must be submitted no later than 30 November 2026 at 12:00 local time.",
+    "page": 4,
+    "category": "submission",
+    "mandatory": true,
+    "verified": true,
+    "match_score": 1.0,
+    "cited_page": null,
+    "joined": false,
+    "scanned": false,
+    "source_chunk": "pages 1-4"
+   },
+   {
+    "id": "R6",
+    "requirement": "Late bids will be rejected without opening.",
+    "quote": "Late bids will be rejected without opening.",
+    "page": 4,
+    "category": "submission",
+    "mandatory": true,
+    "verified": true,
+    "match_score": 1.0,
+    "cited_page": null,
+    "joined": false,
+    "scanned": false,
+    "source_chunk": "pages 1-4"
+   }
+  ],
+  "decision": {
+   "verdict": "no bid",
+   "confidence": 0.95,
+   "scope": {
+    "title": "Construction of a bulk water supply pipeline",
+    "buyer": "City of Example Water Department",
+    "buys": "The tender buys construction works for a bulk water supply pipeline for the City of Example Water Department.",
+    "fit": "outside",
+    "why": "The company is registered at grade 6, below the required grade 7, and lacks a bank guarantee facility for the bid guarantee."
+   },
+   "deciding": [
+    {
+     "id": "R1",
+     "requirement": "Bidder must be registered with the national contractor board at grade 7 or higher.",
+     "page": 2,
+     "verified": true,
+     "status": "fails",
+     "hard": true,
+     "why": "Company is registered at grade 6, below the required grade 7."
+    },
+    {
+     "id": "R3",
+     "requirement": "A bid guarantee of 2% of the bid price must be submitted with the bid.",
+     "page": 3,
+     "verified": true,
+     "status": "fails",
+     "hard": true,
+     "why": "Company states it has no bank guarantee facility to provide the required bid guarantee."
+    },
+    {
+     "id": "R2",
+     "requirement": "Bidder must have completed at least three pipeline projects of similar size in the past five years.",
+     "page": 2,
+     "verified": true,
+     "status": "not stated",
+     "hard": true,
+     "why": "Profile does not mention any completed pipeline projects of similar size."
+    }
+   ],
+   "unmet_total": 3,
+   "reasons": [
+    "The company is registered at grade 6, below the mandatory grade 7 [R1].",
+    "It lacks a bank guarantee facility to provide the required 2% bid guarantee [R3].",
+    "No evidence shows three similar pipeline projects completed in the last five years [R2]."
+   ],
+   "conditions": [],
+   "assessments": [
+    {
+     "id": "R1",
+     "status": "fails",
+     "hard": true,
+     "why": "Company is registered at grade 6, below the required grade 7."
+    },
+    {
+     "id": "R2",
+     "status": "not stated",
+     "hard": true,
+     "why": "Profile does not mention any completed pipeline projects of similar size."
+    },
+    {
+     "id": "R3",
+     "status": "fails",
+     "hard": true,
+     "why": "Company states it has no bank guarantee facility to provide the required bid guarantee."
+    },
+    {
+     "id": "R4",
+     "status": "routine",
+     "hard": false,
+     "why": "Pricing in local currency with VAT is a standard bid preparation step."
+    },
+    {
+     "id": "R5",
+     "status": "routine",
+     "hard": false,
+     "why": "Submitting by the deadline is a standard bid submission rule."
+    },
+    {
+     "id": "R6",
+     "status": "routine",
+     "hard": false,
+     "why": "Avoiding late submission is a standard bid submission rule."
+    }
+   ],
+   "counts": {
+    "fails": 2,
+    "not stated": 1,
+    "met": 0,
+    "routine": 3
+   },
+   "unassessed": [],
+   "rejected_ids": [],
+   "model": "nvidia/Nemotron-3-Ultra-550b-a55b"
+  },
+  "decision_note": null
+ },
+ "usage": {
+  "nvidia/Nemotron-3.5-Super-VL": {
+   "calls": 2,
+   "prompt_tokens": 4640,
+   "completion_tokens": 82
+  },
+  "nvidia/nemotron-3-super-120b-a12b": {
+   "calls": 1,
+   "prompt_tokens": 457,
+   "completion_tokens": 508
+  },
+  "nvidia/Nemotron-3-Ultra-550b-a55b": {
+   "calls": 3,
+   "prompt_tokens": 1414,
+   "completion_tokens": 2278
+  }
+ }
+}
