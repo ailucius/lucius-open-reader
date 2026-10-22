@@ -167,19 +167,27 @@ list.
    (a portal may stamp "Page 3 of 40" on a scan) and images cover at least 30% of it. A page with
    no text and no such image is blank, and is reported as blank.
 2. **Render.** The page is drawn in grey at 150 dpi (an A4 page is 1240 x 1755 pixels, about 2,200
-   input tokens), capped at 2,000 pixels on the long side so an A1 drawing does not cost twenty A4
-   pages; PNG, or JPEG when the PNG is over 900 KB and the JPEG is smaller.
+   input tokens), and never more than 2,000 pixels on the long side, however large the sheet, so an
+   A1 drawing does not cost twenty A4 pages and a 200-inch page is not a 50 MB image; PNG, or JPEG
+   when the PNG is over 900 KB and the JPEG is smaller.
 3. **Transcribe.** `scan.py` sends the image to Nemotron 3.5 Super VL with an instruction to copy
    every word exactly as printed, in reading order, tables one row per line, and to leave out line
-   numbers printed in the margin. A page is asked twice at most; a page that still fails is reported
-   as not read, never filled in. The transcription becomes the page's text.
+   numbers printed in the margin. A page is tried twice at most, after a 2-second pause when the API
+   answered 429 or 5xx; with `VISION_EFFORT` other than `none` (the default), a try whose answer
+   comes back empty is asked once more with thinking off, so a page costs four calls at most. A page
+   that still fails is reported as not read, never filled in. The transcription becomes the page's
+   text.
 4. **Read and check.** The reader reads the transcription with the rest of its chunk. The quote
    check runs against the transcription: on a scanned page it proves the quote is in the vision
    model's transcription of the image, not in a text layer. Every such requirement is tagged
-   `scanned page` on the page, in the checklist and in the export, and the result says which pages
-   were read from an image.
+   `scanned page` on the page, in the checklist and in the export (a quote that runs across a page
+   break is tagged when either of the two pages is a transcription), and the result says which
+   pages were read from an image.
 5. **Bounded.** At most `READER_MAX_SCAN_PAGES` (default 40) scanned pages are read per run, the
-   first ones in the document; the rest are marked on the ledger and named in a warning. Page images
+   first ones in the document; the rest are marked on the ledger and named in a warning. All the
+   scans of a run share a time limit, `READER_SCAN_DEADLINE` (default 120 seconds): a page not
+   finished by then is stopped and reported as not read in time, so a slow or hung endpoint cannot
+   hold the run (each call alone may take up to `READER_LLM_TIMEOUT`). Page images
    go out `READER_CONCURRENCY` at a time while the text chunks are read: a chunk waits only for its
    own scanned pages, and a free reader slot goes to the waiting chunk earliest in the document.
    MuPDF is not thread-safe, so page extraction and rendering run one at a time.
@@ -267,7 +275,8 @@ key when a prompt changes):
 | `VISION_MODEL` | `nvidia/Nemotron-3.5-Super-VL` | model that transcribes scanned pages |
 | `VISION_EFFORT` | `none` | its thinking (copying a page needs none) |
 | `READER_MAX_SCAN_PAGES` | `40` | scanned pages read from the image per run (`0`: none) |
-| `READER_SCAN_DPI` | `150` | resolution of the page image (72 to 300) |
+| `READER_SCAN_DPI` | `150` | resolution of the page image (72 to 300; never over 2,000 pixels a side) |
+| `READER_SCAN_DEADLINE` | `120` | seconds for all the scans of one run; pages not done by then are not read (`0`: no limit) |
 | `TAVILY_API_KEY` | none | enables Find |
 | `READER_FAKE_LLM` | `0` | `1` uses the offline fake client |
 | `READER_CONCURRENCY` | `4` | chunks read at the same time; also page images transcribed at the same time |
@@ -330,8 +339,9 @@ limit reads `X-Forwarded-For`, which a client can set, so the daily cap is the r
 
 ## Limits and honest notes
 
-- Scanned pages are read from their image, up to `READER_MAX_SCAN_PAGES` a run; scans over the cap,
-  and scans the vision model fails on twice, are named on the page and in the export, not read. On a
+- Scanned pages are read from their image, up to `READER_MAX_SCAN_PAGES` a run and within
+  `READER_SCAN_DEADLINE` seconds; scans over the cap, scans the vision model fails on twice and scans
+  not done in time are named on the page and in the export, not read. On a
   scanned page the quote check proves the quote is in the model's transcription, not that the
   transcription is right: compare the quote with the page image. Handwriting and stamps may be
   transcribed badly or as `[illegible]`.
