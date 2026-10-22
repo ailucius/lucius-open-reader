@@ -6,6 +6,8 @@ import csv
 import io
 import json
 import zipfile
+
+import pytest
 from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
@@ -225,3 +227,25 @@ def test_no_cell_can_run_as_a_formula() -> None:
     assert [rows[i][2] for i in (1, 2, 3, 4)] == ["'" + q for q in quotes]
     assert [rows[i][1] for i in (1, 3, 4)] == ["'-Bidders must register.", "'\t=1+1", "'\r=1+1"]
     assert rows[2][7] == "Hard to obtain. + no bank facility"  # starts with text: left as it is
+
+
+def test_example_checklist_is_built_once_and_off_the_event_loop(monkeypatch: pytest.MonkeyPatch) -> None:
+    import threading
+
+    import reader.app as app_module
+
+    if not EXAMPLE.is_file():
+        return
+    builds: list[str] = []
+    real_build, media = app_module.EXPORTS["xlsx"]
+
+    def counting(result: RunResult) -> bytes:
+        builds.append(threading.current_thread().name)
+        return real_build(result)
+
+    monkeypatch.setitem(app_module.EXPORTS, "xlsx", (counting, media))
+    with TestClient(create_app(Settings(fake_llm=True))) as client:
+        first, second = client.get("/api/example/checklist.xlsx"), client.get("/api/example/checklist.xlsx")
+        assert first.status_code == second.status_code == 200 and first.content == second.content
+        assert client.get("/api/example/checklist.pdf").status_code == 404
+    assert len(builds) == 1 and builds[0].startswith("asyncio_"), builds  # once, in the loop's worker threads

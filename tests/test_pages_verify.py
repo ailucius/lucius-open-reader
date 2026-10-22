@@ -116,3 +116,24 @@ def test_joined_pieces_needs_whole_quote_in_order_from_long_passages() -> None:
     assert joined_pieces(normalise("iota kappa lambda mu alpha beta gamma delta"), page) == 0  # out of order
     assert joined_pieces(normalise("alpha beta gamma delta kappa lambda"), page) == 0  # 2-word piece
     assert joined_pieces(normalise("alpha beta gamma delta extra iota kappa lambda mu"), page) == 0  # word not on page
+
+
+def test_a_quote_across_a_break_onto_a_scanned_page_is_marked_scanned() -> None:
+    # page 4 has a text layer, page 5 is a scan read by the vision model; the quote starts at the end
+    # of page 4 and runs onto page 5, so part of it was checked against the transcription
+    pages = [
+        Page(number=4, text="Section 7 Guarantees\nThe successful bidder shall furnish a performance"),
+        Page(number=5, text="guarantee of ten percent of the contract price within fourteen days.", scan=True, transcribed=True),
+        Page(number=6, text="Section 8 Insurance\nThe contractor shall insure the works for their full value."),
+    ]
+    reqs = [
+        Requirement(requirement="r", quote="shall furnish a performance guarantee of ten percent of the contract price", page=4),
+        Requirement(requirement="r", quote="The contractor shall insure the works for their full value.", page=6),
+        Requirement(requirement="r", quote="a guarantee from a bank registered in the country", page=5),
+        Requirement(requirement="r", quote="The contractor shall insure the works for their full value.", page=5),
+    ]
+    span, text_page, missing, moved = verify_requirements(reqs, pages)
+    assert span.verified and span.page == 4 and span.scanned  # credited to page 4, checked partly on page 5's transcription
+    assert text_page.verified and not text_page.scanned
+    assert not missing.verified and missing.scanned  # "not found, scanned page": looked for in the transcription
+    assert moved.verified and moved.page == 6 and moved.cited_page == 5 and not moved.scanned  # found on a text page

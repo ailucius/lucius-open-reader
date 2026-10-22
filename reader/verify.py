@@ -77,6 +77,7 @@ class PageIndex:
     def __init__(self, pages: list[Page]) -> None:
         self.words: dict[int, list[str]] = {p.number: normalise(p.text) for p in pages}
         self.grams: dict[int, set[tuple[str, ...]]] = {n: _grams(w) for n, w in self.words.items()}
+        self.transcribed: set[int] = {p.number for p in pages if p.transcribed}
 
     def score(self, quote_words: list[str], page: int) -> float:
         if page not in self.words:
@@ -103,26 +104,30 @@ def verify_requirements(reqs: list[Requirement], pages: list[Page], threshold: f
         words = normalise(req.quote)
         cited = req.page
         best_page, best = cited, index.score(words, cited)
+        used = [cited]  # the pages whose text the best match was found in
         if best < threshold:
             for offset in (-1, 1, -2, 2):
                 candidate = cited + offset
                 score = index.score(words, candidate)
                 if score > best:
-                    best_page, best = candidate, score
+                    best_page, best, used = candidate, score, [candidate]
             if best < threshold:
                 for first in (cited, cited - 1):
                     score = index.score_span(words, first)
                     if score > best:
-                        # credit the page where the quote starts
-                        best_page, best = first, score
+                        # credit the page where the quote starts; the match used both pages
+                        best_page, best, used = first, score, [first, first + 1]
         verified = best >= threshold
         joined = False
         if not verified:
             for candidate in (cited, cited - 1, cited + 1):
                 if index.pieces(words, candidate) >= 2:
-                    verified, joined, best_page = True, True, candidate
+                    verified, joined, best_page, used = True, True, candidate, [candidate]
                     break
         page = best_page if verified else cited
+        # "scanned": the check ran against the vision model's transcription of a page image, on the
+        # page the quote is credited to or, for a quote across a page break, on either of the two
+        checked = used if verified else [cited]
         out.append(
             req.model_copy(
                 update={
@@ -131,6 +136,7 @@ def verify_requirements(reqs: list[Requirement], pages: list[Page], threshold: f
                     "match_score": round(best, 3),
                     "page": page,
                     "cited_page": cited if page != cited else None,
+                    "scanned": any(n in index.transcribed for n in checked),
                 }
             )
         )

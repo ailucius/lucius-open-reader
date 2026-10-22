@@ -150,6 +150,10 @@ def summary_rows(result: RunResult, generated: datetime) -> list[tuple[str, str]
         rows.append(
             ("Scans not read", f"Pages {page_list(s.scan_failed_pages)}: the vision model could not read them in two tries.")
         )
+    if s.scan_timeout_pages:
+        rows.append(
+            ("Scans not read in time", f"Pages {page_list(s.scan_timeout_pages)}: not finished within the time limit for scanned pages.")
+        )
     if s.scan_skipped_pages:
         why = f"the cap is {s.scan_cap} scanned pages a run" if s.scan_cap else "reading scanned pages is switched off"
         rows.append(("Scans over the cap", f"Pages {page_list(s.scan_skipped_pages)} are scans and were not read: {why}."))

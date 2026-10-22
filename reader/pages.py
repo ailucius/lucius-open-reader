@@ -69,12 +69,17 @@ def extract_pages(pdf: bytes, max_pages: int = 500) -> list[Page]:
 
 
 def render_page(pdf: bytes, number: int, dpi: int = 150) -> tuple[bytes, str]:
-    """One page as an image for the vision model: (bytes, MIME type)."""
+    """One page as an image for the vision model: (bytes, MIME type). The image is `dpi` dots per inch
+    but never more than MAX_SIDE_PX on its long side, however large the page (a PDF page may be up to
+    200 inches a side)."""
     with _MUPDF, _open(pdf) as doc:
         page = doc[number - 1]
-        long_side_in = max(page.rect.width, page.rect.height) / 72
-        dpi = max(36, min(dpi, int(MAX_SIDE_PX / long_side_in))) if long_side_in > 0 else dpi
-        pix = page.get_pixmap(dpi=dpi, colorspace=pymupdf.csGRAY, alpha=False)
+        long_side_pt = max(page.rect.width, page.rect.height)
+        zoom = dpi / 72
+        if long_side_pt > 0:
+            # no lower bound: a huge sheet comes out small rather than as a 50 MB image
+            zoom = min(zoom, MAX_SIDE_PX / long_side_pt)
+        pix = page.get_pixmap(matrix=pymupdf.Matrix(zoom, zoom), colorspace=pymupdf.csGRAY, alpha=False)
         png = pix.tobytes("png")
         if len(png) <= PNG_LIMIT_BYTES:
             return png, "image/png"

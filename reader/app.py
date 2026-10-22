@@ -33,19 +33,26 @@ RUN_TTL_S = 3600
 XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 
 
-def checklist_response(result: RunResult, fmt: str) -> Response:
-    """The bid checklist as a download: `xlsx` (Checklist and Summary sheets) or `csv` (the checklist)."""
-    if fmt == "xlsx":
-        body, media = checklist_xlsx(result), XLSX
-    elif fmt == "csv":
-        body, media = checklist_csv(result), "text/csv; charset=utf-8"
-    else:
+EXPORTS = {"xlsx": (checklist_xlsx, XLSX), "csv": (checklist_csv, "text/csv; charset=utf-8")}
+
+
+async def build_checklist(result: RunResult, fmt: str) -> tuple[bytes, str, str]:
+    """(body, media type, file name) of the bid checklist: `xlsx` (Checklist and Summary sheets) or
+    `csv` (the checklist and the call). Built in a worker thread: a long tender's workbook takes a
+    moment, and the event loop is serving progress streams meanwhile."""
+    if fmt not in EXPORTS:
         raise HTTPException(404, "the checklist comes as .xlsx or .csv")
+    build, media = EXPORTS[fmt]
+    body = await asyncio.to_thread(build, result)
+    return body, media, export_filename(result, fmt)
+
+
+def checklist_response(body: bytes, media: str, filename: str) -> Response:
     return Response(
         body,
         media_type=media,
         headers={
-            "Content-Disposition": f'attachment; filename="{export_filename(result, fmt)}"',
+            "Content-Disposition": f'attachment; filename="{filename}"',
             "Cache-Control": "no-store",
             "X-Content-Type-Options": "nosniff",
         },
@@ -85,6 +92,7 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
     runs: dict[str, Run] = {}
     started: list[tuple[float, str]] = []  # (time, client address) of runs started, for the limits
     searched: list[tuple[float, str]] = []  # searches and document finds (they spend Tavily and model credit)
+    example_files: dict[str, tuple[bytes, str, str]] = {}  # the example's checklist per format, built once
 
     def client_address(request: Request) -> str:
         forwarded = request.headers.get("x-forwarded-for", "")
@@ -169,9 +177,15 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
 
     @app.get("/api/example/checklist.{fmt}")
     async def example_checklist(fmt: str) -> Response:
-        if not EXAMPLE.is_file():
-            raise HTTPException(404, "no example on this server")
-        return checklist_response(RunResult.model_validate_json(EXAMPLE.read_bytes()), fmt)
+        # public and the same for everyone: built once per format, then served from memory
+        if fmt not in EXPORTS:
+            raise HTTPException(404, "the checklist comes as .xlsx or .csv")
+        if fmt not in example_files:
+            if not EXAMPLE.is_file():
+                raise HTTPException(404, "no example on this server")
+            saved = RunResult.model_validate_json(await asyncio.to_thread(EXAMPLE.read_bytes))
+            example_files[fmt] = await build_checklist(saved, fmt)
+        return checklist_response(*example_files[fmt])
 
     @app.post("/api/find")
     async def find(req: FindRequest, request: Request) -> dict[str, Any]:
@@ -291,7 +305,7 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
         run = get_run(run_id)
         if run.result is None:
             raise HTTPException(404, "the checklist is ready when the run has finished")
-        return checklist_response(RunResult.model_validate(run.result), fmt)
+        return checklist_response(*await build_checklist(RunResult.model_validate(run.result), fmt))
 
     @app.get("/api/runs/{run_id}/pdf")
     async def run_pdf(run_id: str) -> Response:

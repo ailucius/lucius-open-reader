@@ -70,6 +70,7 @@ class Settings:
     vision_effort: str | None = DEFAULT_VISION_EFFORT
     scan_dpi: int = 150  # an A4 page is 1240 x 1755 pixels, about 2,300 input tokens
     max_scan_pages: int = 40  # scanned pages read from their image per run (0: switched off)
+    scan_deadline_s: float = 120.0  # time limit for all the scans of one run (0: no limit)
     tavily_api_key: str | None = None
     fake_llm: bool = False
     concurrency: int = 4
@@ -104,6 +105,7 @@ class Settings:
             vision_effort=_effort("VISION_EFFORT", DEFAULT_VISION_EFFORT),
             scan_dpi=min(300, max(72, _int("READER_SCAN_DPI", 150))),
             max_scan_pages=max(0, _int("READER_MAX_SCAN_PAGES", 40)),
+            scan_deadline_s=max(0.0, _float("READER_SCAN_DEADLINE", 120.0)),
             tavily_api_key=os.environ.get("TAVILY_API_KEY") or None,
             fake_llm=_flag("READER_FAKE_LLM"),
             concurrency=max(1, _int("READER_CONCURRENCY", 4)),

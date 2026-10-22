@@ -26,7 +26,9 @@ from .config import Settings
 
 
 class LLMError(RuntimeError):
-    pass
+    def __init__(self, message: str, status: int | None = None) -> None:
+        super().__init__(message)
+        self.status = status  # the HTTP status when the API answered with an error
 
 
 class LLMClient(Protocol):
@@ -212,7 +214,7 @@ class NebiusClient:
     @staticmethod
     def _answer(resp: httpx.Response) -> tuple[str, str | None]:
         if resp.status_code >= 400:
-            raise LLMError(f"Nebius API {resp.status_code}: {resp.text[:300]}")
+            raise LLMError(f"Nebius API {resp.status_code}: {resp.text[:300]}", status=resp.status_code)
         data = resp.json()
         try:
             choice = data["choices"][0]

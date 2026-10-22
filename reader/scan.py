@@ -2,9 +2,13 @@
 
 The transcription becomes the page's text, for the reader and for the quote check, and every page
 and requirement it touches says so: on a scanned page the quote check proves the quote is in the
-vision model's transcription of the page image, not in a text layer. Each page is asked twice at
-most; a page that still fails is reported as not read, never filled in. At most `cap` scanned pages
-are read per run (the first ones in the document); the rest are reported as over the cap.
+vision model's transcription of the page image, not in a text layer. Each page is tried twice at
+most, with a short pause first when the API answered 429 or 5xx (with a thinking effort other than
+"none", a try whose answer comes back empty is asked once more with thinking off, so a page costs
+four calls at most). A page that still fails is reported as not read, never filled in. At most
+`cap` scanned pages are read per run (the first ones in the document); the rest are reported as
+over the cap. All the scans of a run share one time limit (`deadline_s`): a page not finished by
+then is stopped and reported as not read in time, so a hung endpoint cannot hold the run.
 """
 
 from __future__ import annotations
@@ -24,6 +28,9 @@ Leave out line numbers printed in the margin (legal texts number every line); ke
 Do not translate, summarise, correct spelling or add anything that is not on the page. Write [illegible] for a word you cannot read.
 If the page has no readable text, reply with exactly: NO TEXT
 Reply with the transcription only."""
+
+SCAN_DEADLINE_S = 120.0  # all the scans of one run
+RETRY_PAUSE_S = 2.0  # before the second try, when the API said 429 or 5xx
 
 _NO_TEXT = re.compile(r"^\W*no (readable )?text\W*$", re.IGNORECASE)
 _WHOLE_FENCE = re.compile(r"^```[a-z]*\n(.*)\n```$", re.DOTALL)
@@ -46,8 +53,19 @@ def clean_transcription(text: str) -> str:
 class ScanOutcome:
     read: list[int] = field(default_factory=list)  # transcribed: page.text is now the transcription
     failed: list[int] = field(default_factory=list)  # two tries failed: not read
+    timed_out: list[int] = field(default_factory=list)  # not finished within the time limit: not read
     errors: list[str] = field(default_factory=list)
     skipped: list[int] = field(default_factory=list)  # over the cap: not read
+
+
+# on_page(page, why): why is None when the page was read, else "failed" or "time limit"
+OnPage = Callable[[Page, str | None], Awaitable[None]]
+
+
+def worth_a_pause(exc: Exception | None) -> bool:
+    """The API was busy or broken (429, 5xx): wait a moment before trying again."""
+    status = getattr(exc, "status", None)
+    return isinstance(status, int) and (status == 429 or status >= 500)
 
 
 def plan_scans(pages: list[Page], cap: int) -> tuple[list[Page], list[int]]:
@@ -66,22 +84,29 @@ async def read_scans(
     dpi: int = 150,
     concurrency: int = 4,
     effort: str | None = None,
-    on_page: Callable[[Page, bool], Awaitable[None]] | None = None,
+    deadline_s: float = SCAN_DEADLINE_S,
+    pause_s: float = RETRY_PAUSE_S,
+    on_page: OnPage | None = None,
 ) -> ScanOutcome:
-    """Transcribe the scanned pages in place, `concurrency` at a time."""
+    """Transcribe the scanned pages in place, `concurrency` at a time, within `deadline_s` seconds
+    for all of them (0: no limit)."""
     todo, skipped = plan_scans(pages, cap)
     outcome = ScanOutcome(skipped=skipped)
     sem = asyncio.Semaphore(concurrency)
+    settled: set[int] = set()  # pages whose outcome is recorded
 
     async def one(page: Page) -> None:
         last_error: Exception | None = None
+        text: str | None = None
         async with sem:
             try:
                 image, mime = await asyncio.to_thread(render_page, pdf, page.number, dpi)
             except Exception as exc:  # a page pymupdf cannot draw is a page not read
                 last_error = exc
             else:
-                for _attempt in range(2):
+                for attempt in range(2):
+                    if attempt and worth_a_pause(last_error):
+                        await asyncio.sleep(pause_s)
                     try:
                         reply = await llm.chat_image(
                             model=model,
@@ -91,24 +116,40 @@ async def read_scans(
                             mime=mime,
                             effort=effort,
                         )
-                        page.text = clean_transcription(reply)
-                        page.transcribed = True
-                        last_error = None
+                        text, last_error = clean_transcription(reply), None
                         break
                     except Exception as exc:  # network, API or empty reply: retry once, then record
                         last_error = exc
-        if last_error is None:
+        # no await from here to the record: a page stopped by the time limit is either read or not
+        if text is not None:
+            page.text, page.transcribed = text, True
             outcome.read.append(page.number)
         else:
             outcome.failed.append(page.number)
             outcome.errors.append(f"page {page.number}: {last_error}")
+        settled.add(page.number)
         if on_page:
-            await on_page(page, last_error is None)
+            await on_page(page, None if text is not None else "failed")
 
     tasks = [asyncio.create_task(one(p)) for p in todo]
     try:
-        await asyncio.gather(*tasks)
-    finally:  # if one page's task fails outright (not a page error), the rest are not left running
+        if tasks:
+            done, pending = await asyncio.wait(
+                tasks, timeout=deadline_s if deadline_s > 0 else None, return_when=asyncio.FIRST_EXCEPTION
+            )
+            for task in done:
+                if not task.cancelled() and task.exception() is not None:
+                    raise task.exception()  # type: ignore[misc]  # an outright failure, not a page error
+            for task in pending:
+                task.cancel()
+            await asyncio.gather(*pending, return_exceptions=True)
+            for page in todo:
+                if page.number not in settled:
+                    outcome.timed_out.append(page.number)
+                    outcome.errors.append(f"page {page.number}: not read within the {deadline_s:g} s limit for scans")
+                    if on_page:
+                        await on_page(page, "time limit")
+    finally:  # whatever stops this function, no page task is left running
         for task in tasks:
             task.cancel()
     outcome.read.sort()

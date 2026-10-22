@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+import time
 from typing import Any
 
 import httpx
@@ -17,7 +18,7 @@ from reader.models import Page, Requirement
 from reader.extract import OrderedSlots, extract_requirements
 from reader.pages import MAX_SIDE_PX, chunk_pages, extract_pages, render_page
 from reader.pipeline import run_reader
-from reader.scan import VISION_SYSTEM, clean_transcription, read_scans
+from reader.scan import VISION_SYSTEM, clean_transcription, read_scans, worth_a_pause
 from reader.verify import verify_requirements
 from tests.conftest import TENDER_PAGES, make_scanned_pdf
 
@@ -58,6 +59,16 @@ def test_render_page_is_grey_png_at_the_dpi_and_caps_large_sheets() -> None:
     assert max(pix.width, pix.height) <= MAX_SIDE_PX
 
 
+def test_render_page_never_exceeds_the_cap_on_huge_sheets() -> None:
+    # PDF pages go up to 200 inches a side; a floor on the dpi used to make this 7200 x 7200 pixels
+    for width, height in ((14400, 14400), (14400, 300), (300, 14400)):
+        doc = pymupdf.open()
+        doc.new_page(width=width, height=height)
+        image, _ = render_page(doc.tobytes(), 1, dpi=150)
+        pix = pymupdf.Pixmap(image)
+        assert max(pix.width, pix.height) == MAX_SIDE_PX and len(image) < 200_000
+
+
 def test_clean_transcription() -> None:
     assert clean_transcription("NO TEXT") == ""
     assert clean_transcription("  no readable text. ") == ""
@@ -91,8 +102,8 @@ async def test_read_scans_transcribes_in_place_retries_once_and_never_invents() 
     llm = ScriptedVision({2: "Bidders must be registered at grade 7."})
     done: list[tuple[int, bool]] = []
 
-    async def on_page(page: Page, ok: bool) -> None:
-        done.append((page.number, ok))
+    async def on_page(page: Page, why: str | None) -> None:
+        done.append((page.number, why is None))
 
     outcome = await read_scans(pdf, pages, llm, "vl", cap=40, dpi=72, concurrency=2, effort="none", on_page=on_page)
     assert outcome.read == [2, 4] and outcome.failed == [3] and outcome.skipped == []
@@ -306,3 +317,81 @@ async def test_a_chunk_that_waited_for_its_scans_is_read_before_later_chunks() -
     chunks = chunk_pages(extract_pages(make_pdf(TENDER_PAGES[:5])), 1)
     await extract_requirements(chunks, Logged(), "m", concurrency=1, before_chunk=scans_of_chunk_1)
     assert order == ["Tender pages 2 to 2.", "Tender pages 1 to 1.", "Tender pages 3 to 3.", "Tender pages 4 to 4.", "Tender pages 5 to 5."]
+
+
+class SlowVision(FakeLLM):
+    """Page 3's image call never answers (a hung endpoint); the others answer at once."""
+
+    async def chat_image(self, **kwargs: Any) -> str:
+        if kwargs["user"].split()[1] == "3":
+            await asyncio.Event().wait()
+        return await super().chat_image(**kwargs)
+
+
+async def test_the_time_limit_stops_a_hung_page_and_reports_it_not_read() -> None:
+    pdf = make_scanned_pdf([("scan", TENDER_PAGES[i]) for i in (1, 3, 4)], dpi=50)
+    pages = extract_pages(pdf)
+    llm = SlowVision({1: TENDER_PAGES[1], 2: TENDER_PAGES[3], 3: TENDER_PAGES[4]})
+    told: list[tuple[int, str | None]] = []
+
+    async def on_page(page: Page, why: str | None) -> None:
+        told.append((page.number, why))
+
+    started = time.monotonic()
+    outcome = await read_scans(pdf, pages, llm, "vl", dpi=50, deadline_s=0.3, on_page=on_page)
+    assert time.monotonic() - started < 2
+    assert outcome.read == [1, 2] and outcome.failed == [] and outcome.timed_out == [3]
+    assert outcome.errors == ["page 3: not read within the 0.3 s limit for scans"]
+    assert sorted(told) == [(1, None), (2, None), (3, "time limit")]
+    assert pages[2].text.strip() == "" and not pages[2].transcribed  # stopped: nothing filled in
+
+
+async def test_a_run_with_a_hung_scan_finishes_and_says_so() -> None:
+    pdf = make_scanned_pdf([("text", TENDER_PAGES[0]), ("scan", TENDER_PAGES[1]), ("scan", TENDER_PAGES[3])], dpi=50)
+    events: list[dict[str, Any]] = []
+
+    async def emit(event: dict[str, Any]) -> None:
+        events.append(event)
+
+    settings = Settings(fake_llm=True, chunk_pages=2, scan_dpi=50, scan_deadline_s=0.3)
+    llm = SlowVision({2: TENDER_PAGES[1]})
+    result, _ = await asyncio.wait_for(run_reader(settings=settings, llm=llm, pdf=pdf, emit=emit), timeout=5)
+    s = result.stats
+    assert s.scanned_pages == [2] and s.scan_timeout_pages == [3] and s.scan_failed_pages == [] and s.pages_read == 2
+    assert {r.page for r in result.requirements} == {2}  # page 1 has no requirement; page 3 was not read
+    late = next(e for e in events if e["type"] == "scan" and e["page"] == 3)
+    assert late["ok"] is False and late["timed_out"] is True
+
+
+async def test_a_pause_before_the_second_try_only_when_the_api_is_busy() -> None:
+    class Busy(FakeLLM):
+        def __init__(self) -> None:
+            super().__init__({1: "Bidders must register.", 2: "Bids close at noon."})
+            self.times: dict[int, list[float]] = {}
+
+        async def chat_image(self, **kwargs: Any) -> str:
+            page = int(kwargs["user"].split()[1])
+            self.times.setdefault(page, []).append(time.monotonic())
+            if len(self.times[page]) == 1:
+                if page == 1:
+                    raise LLMError("Nebius API 429: slow down", status=429)
+                raise LLMError("image reply is empty (finish_reason 'stop')")  # not the API being busy
+            return await super().chat_image(**kwargs)
+
+    pdf = make_scanned_pdf([("scan", TENDER_PAGES[1]), ("scan", TENDER_PAGES[3])], dpi=50)
+    llm = Busy()
+    outcome = await read_scans(pdf, extract_pages(pdf), llm, "vl", dpi=50, pause_s=0.25)
+    assert outcome.read == [1, 2]
+    gap = {page: t[1] - t[0] for page, t in llm.times.items()}
+    assert gap[1] >= 0.25 and gap[2] < 0.2
+
+
+async def test_api_errors_carry_their_status() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(503, text="overloaded")
+
+    client = NebiusClient("nb-test", "https://api.tokenfactory.nebius.com/v1/", transport=httpx.MockTransport(handler))
+    with pytest.raises(LLMError) as caught:
+        await client.chat_image(model="m", system="s", user="Page 1 of the tender. Transcribe it.", image=b"x", mime="image/png")
+    assert caught.value.status == 503 and worth_a_pause(caught.value)
+    assert not worth_a_pause(LLMError("model reply is empty")) and not worth_a_pause(LLMError("Nebius API 400", status=400))

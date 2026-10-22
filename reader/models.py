@@ -30,7 +30,7 @@ class Requirement(BaseModel):
     match_score: float = 0.0
     cited_page: int | None = None  # set when verification moved the page
     joined: bool = False  # the quote joins 2-3 verbatim passages of one page (the model skipped words)
-    scanned: bool = False  # its page is a scan: the quote was checked against the vision model's transcription
+    scanned: bool = False  # the quote was checked against the vision model's transcription of a scanned page
     source_chunk: str = ""
 
 
@@ -94,6 +94,7 @@ class ReadStats(BaseModel):
     scanned_pages: list[int] = []  # scans read from the page image by the vision model
     scan_failed_pages: list[int] = []  # scans the vision model could not read (two tries), so not read
     scan_skipped_pages: list[int] = []  # scans over the per-run cap, so not read
+    scan_timeout_pages: list[int] = []  # scans not finished within the time limit for scans, so not read
     scan_cap: int = 0
     thinking_retries: int = 0
 

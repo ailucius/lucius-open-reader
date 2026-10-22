@@ -91,19 +91,20 @@ async def run_reader(
         scans_done = 0
         scan_lock = asyncio.Lock()
 
-        async def on_scan(page: Page, ok: bool) -> None:
+        async def on_scan(page: Page, why: str | None) -> None:
             nonlocal scans_done
             try:
                 async with scan_lock:
                     scans_done += 1
-                    if not ok:
+                    if why:
                         unread_scans.add(page.number)
                     await emit(
                         {
                             "type": "scan",
                             "page": page.number,
-                            "ok": ok,
-                            "chars": len(page.text) if ok else 0,
+                            "ok": why is None,
+                            "timed_out": why == "time limit",
+                            "chars": len(page.text) if why is None else 0,
                             "done": scans_done,
                             "total": len(to_scan),
                         }
@@ -121,6 +122,7 @@ async def run_reader(
                 dpi=settings.scan_dpi,
                 concurrency=settings.concurrency,
                 effort=settings.vision_effort,
+                deadline_s=settings.scan_deadline_s,
                 on_page=on_scan,
             )
         )
@@ -178,6 +180,7 @@ async def run_reader(
             scan_task.cancel()
     stats.scanned_pages = scanned.read
     stats.scan_failed_pages = scanned.failed
+    stats.scan_timeout_pages = scanned.timed_out
     stats.scan_skipped_pages = over_cap
 
     await emit({"type": "stage", "stage": "verify", "message": "Checking every quote against its page"})
@@ -193,10 +196,8 @@ async def run_reader(
             continue
         seen.add(key)
         unique.append(r)
-    transcribed = {p.number for p in pages if p.transcribed}
     for i, r in enumerate(unique, start=1):
-        r.id = f"R{i}"
-        r.scanned = r.page in transcribed
+        r.id = f"R{i}"  # r.scanned was set by the quote check
 
     stats.pages_read = len(pages) - len(failed_numbers | unread_scans)
     stats.chunks_failed = outcome.failed_chunks

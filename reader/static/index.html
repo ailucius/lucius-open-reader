@@ -524,6 +524,7 @@ $("run-form").addEventListener("submit", async (e) => {
       const d = JSON.parse(ev.data);
       markTile(d.page, d.ok ? "read" : "failed");
       log(d.ok ? "Page " + d.page + " read from its image" + (d.chars ? "" : ": no readable text on it") + " (" + d.done + " of " + d.total + ")"
+        : d.timed_out ? "Page " + d.page + ": not read within the time limit for scanned pages (" + d.done + " of " + d.total + ")"
         : "Page " + d.page + ": the vision model could not read the image in two tries (" + d.done + " of " + d.total + ")");
     });
     es.addEventListener("progress", ev => {
@@ -599,8 +600,8 @@ function render(res) {
     if (n) { t.classList.add("has", n >= 6 ? "l3" : n >= 3 ? "l2" : "l1"); t.textContent = String(n); t.title = "Page " + p + ": " + n + " requirement" + (n > 1 ? "s" : ""); t.tabIndex = 0; }
   }
   const s = res.stats;
-  const scanned = s.scanned_pages || [], scanFailed = s.scan_failed_pages || [], scanSkipped = s.scan_skipped_pages || [];
-  for (const [nums, cls, what] of [[scanned, "", "scanned, read from the page image"], [scanFailed, "failed", "scanned, the vision model could not read it"], [scanSkipped, "skipped", "scan over the cap, not read"]]) {
+  const scanned = s.scanned_pages || [], scanFailed = s.scan_failed_pages || [], scanSkipped = s.scan_skipped_pages || [], scanLate = s.scan_timeout_pages || [];
+  for (const [nums, cls, what] of [[scanned, "", "scanned, read from the page image"], [scanFailed, "failed", "scanned, the vision model could not read it"], [scanLate, "failed", "scanned, not read within the time limit"], [scanSkipped, "skipped", "scan over the cap, not read"]]) {
     for (const p of nums) {
       const t = tile(p); if (!t) continue;
       t.classList.add("scan"); if (cls) t.classList.add(cls);
@@ -615,6 +616,7 @@ function render(res) {
     scanSkipped.length ? (s.scan_cap ? "Scan cap reached: a run reads at most " + s.scan_cap + " scanned pages, so pages " + pageList(scanSkipped) + " were not read."
       : "Reading scanned pages is switched off here, so scanned pages " + pageList(scanSkipped) + " were not read.") : null,
     scanFailed.length ? "Scanned " + (scanFailed.length > 1 ? "pages " : "page ") + pageList(scanFailed) + " could not be read: " + vision + " failed twice. Nothing from " + (scanFailed.length > 1 ? "them" : "it") + " is in the list." : null,
+    scanLate.length ? "Scanned " + (scanLate.length > 1 ? "pages " : "page ") + pageList(scanLate) + (scanLate.length > 1 ? " were" : " was") + " not read within the time limit for scanned pages. Nothing from " + (scanLate.length > 1 ? "them" : "it") + " is in the list." : null,
   ].filter(Boolean);
   $("v-warn").textContent = warn.length ? warn.join(" ") + " Check those pages in the PDF yourself." : "";
   $("v-warn").classList.toggle("hidden", !warn.length);
