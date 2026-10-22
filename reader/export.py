@@ -216,14 +216,21 @@ def deciding_rows(result: RunResult) -> list[list[str | int]]:
     ]
 
 
-def _text(value: str | int) -> str | int:
-    return ILLEGAL_CHARACTERS_RE.sub("", value) if isinstance(value, str) else value
+def looks_like_formula(value: object) -> bool:
+    """Text a spreadsheet could take for a formula (OWASP's CSV injection list)."""
+    return isinstance(value, str) and value.startswith(_FORMULA_START)
 
 
 def _put(ws: Worksheet, row: int, col: int, value: str | int) -> Cell:
-    cell = ws.cell(row=row, column=col, value=_text(value))
-    if isinstance(value, str) and value.startswith("="):
-        cell.data_type = "s"  # tender text, never a formula
+    """Tender text, the profile and model output go in as text, never as a formula: a value that
+    starts with = + - @ (or a tab or carriage return) is a text cell with Excel's quote prefix, the hidden
+    apostrophe Excel itself adds, so it shows exactly as written and stays text when edited."""
+    if isinstance(value, str):
+        value = ILLEGAL_CHARACTERS_RE.sub("", value)  # control characters PDFs carry; not allowed in XML
+    cell = ws.cell(row=row, column=col, value=value)
+    if looks_like_formula(value):
+        cell.data_type = "s"
+        cell.quotePrefix = True
     return cell
 
 
@@ -294,13 +301,23 @@ def checklist_xlsx(result: RunResult, generated: datetime | None = None) -> byte
     return out.getvalue()
 
 
+def call_label(result: RunResult) -> str:
+    """The bid call in a few words: "No bid (95% confidence)", or why there is none."""
+    d = result.decision
+    if d:
+        return f"{VERDICT[d.verdict]} ({round(d.confidence * 100)}% confidence)"
+    return ("No call. " + (result.decision_note or "")).strip()
+
+
 def checklist_csv(result: RunResult) -> bytes:
-    """The Checklist sheet as CSV (UTF-8 with a byte order mark, so Excel reads accents right).
-    A cell that starts like a formula gets a leading apostrophe, so a spreadsheet shows it as text."""
+    """The Checklist sheet as CSV (UTF-8 with a byte order mark, so Excel reads accents right), with
+    one more column, "Call": a CSV holds one table, so the call the workbook keeps on its Summary
+    sheet is repeated on every row. A cell that starts like a formula (= + - @, a tab or a carriage
+    return) gets a leading apostrophe, so a spreadsheet shows it as text and never runs it."""
     out = io.StringIO()
     writer = csv.writer(out, lineterminator="\r\n")
-    for row in checklist_rows(result):
-        writer.writerow(
-            ["'" + v if isinstance(v, str) and v.startswith(_FORMULA_START) else v for v in row]
-        )
+    call = call_label(result)
+    for i, row in enumerate(checklist_rows(result)):
+        row = [*row, "Call" if i == 0 else call]
+        writer.writerow(["'" + v if looks_like_formula(v) else v for v in row])  # type: ignore[operator]
     return out.getvalue().encode("utf-8-sig")

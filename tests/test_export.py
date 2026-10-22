@@ -5,6 +5,7 @@ from __future__ import annotations
 import csv
 import io
 import json
+import zipfile
 from datetime import UTC, datetime
 
 from fastapi.testclient import TestClient
@@ -105,6 +106,8 @@ def test_checklist_without_a_decision_leaves_judgments_empty() -> None:
     result.decision_note = "Add a company profile to get a bid / no-bid call."
     rows = checklist_rows(result)
     assert all(r[6] == "" and r[7] == "" for r in rows[1:])
+    csv_rows = list(csv.reader(io.StringIO(checklist_csv(result).decode("utf-8-sig"))))
+    assert {r[10] for r in csv_rows[1:]} == {"No call. Add a company profile to get a bid / no-bid call."}
     wb = load_workbook(io.BytesIO(checklist_xlsx(result, GENERATED)))
     summary = {r[0]: r[1] for r in wb["Summary"].iter_rows(values_only=True) if r[0]}
     assert summary["Call"] == "No call. Add a company profile to get a bid / no-bid call."
@@ -115,7 +118,8 @@ def test_csv_is_the_checklist_sheet() -> None:
     raw = checklist_csv(_result())
     assert raw.startswith(b"\xef\xbb\xbf")  # so Excel reads it as UTF-8
     rows = list(csv.reader(io.StringIO(raw.decode("utf-8-sig"))))
-    assert rows[0] == [name for name, _ in COLUMNS] and len(rows) == 5
+    assert rows[0] == [name for name, _ in COLUMNS] + ["Call"] and len(rows) == 5
+    assert {r[10] for r in rows[1:]} == {"No bid (80% confidence)"}  # the call on every row
     assert rows[1][:4] == ["1", "Register at grade 7.", "Bidders must be registered at grade 7 or higher.", "2"]
     assert rows[1][8] == "found, scanned page"
     assert rows[2][2] == "'=A bid guarantee of 2% must be submitted."  # shown as text, not run as a formula
@@ -177,3 +181,47 @@ def test_example_checklist_route() -> None:
         ws = load_workbook(io.BytesIO(resp.content))["Checklist"]
         saved = json.loads(EXAMPLE.read_text())
         assert ws.max_row == len(saved["requirements"]) + 1
+
+
+def test_no_cell_can_run_as_a_formula() -> None:
+    # tender quotes, model output, the user's own profile and file name all reach the files
+    result = _result()
+    quotes = ['=HYPERLINK("http://x.example","click")', "+1+1", "-2+3", "@SUM(A1:A2)"]
+    for r, text in zip(result.requirements, quotes, strict=True):
+        r.quote = text
+    result.requirements[0].requirement = "-Bidders must register."
+    result.requirements[2].requirement = "\t=1+1"
+    result.requirements[3].requirement = "\r=1+1"
+    result.profile = "=1+2 pipeline contractor"
+    result.source = "=evil.pdf"
+    assert result.decision is not None
+    result.decision.assessments[1].why = "+ no bank facility"
+    starts = ("=", "+", "-", "@", "\t", "\r")
+
+    raw = checklist_xlsx(result, GENERATED)
+    wb = load_workbook(io.BytesIO(raw))
+    prefixed = []
+    for ws in wb.worksheets:
+        for row in ws.iter_rows():
+            for cell in row:
+                assert cell.data_type != "f", (ws.title, cell.coordinate, cell.value)
+                # XML reads a stored carriage return back as a line feed
+                if isinstance(cell.value, str) and cell.value.startswith(starts + ("\n",)):
+                    assert cell.data_type == "s" and cell.quotePrefix, (ws.title, cell.coordinate, cell.value)
+                    prefixed.append(f"{ws.title}!{cell.coordinate}")
+    # checklist: 4 quotes and 3 requirements; summary: the source, the profile, and in the list of
+    # requirements that decide it, R1's requirement and R2's why
+    assert prefixed == ["Checklist!B2", "Checklist!C2", "Checklist!C3", "Checklist!B4", "Checklist!C4", "Checklist!B5",
+                        "Checklist!C5", "Summary!B3", "Summary!B11", "Summary!F23", "Summary!B24"]
+    checklist = wb["Checklist"]
+    assert checklist.cell(row=2, column=3).value == quotes[0]  # shown exactly as in the tender, no apostrophe
+    assert checklist.cell(row=2, column=2).value == "-Bidders must register."
+    with zipfile.ZipFile(io.BytesIO(raw)) as z:
+        sheets = [z.read(n).decode() for n in z.namelist() if n.startswith("xl/worksheets/sheet")]
+    assert len(sheets) == 2 and not any("<f>" in x or "<f " in x for x in sheets)  # no formula anywhere
+
+    rows = list(csv.reader(io.StringIO(checklist_csv(result).decode("utf-8-sig"), newline="")))
+    assert all(not v.startswith(starts) for row in rows for v in row)
+    assert [rows[i][2] for i in (1, 2, 3, 4)] == ["'" + q for q in quotes]
+    assert [rows[i][1] for i in (1, 3, 4)] == ["'-Bidders must register.", "'\t=1+1", "'\r=1+1"]
+    assert rows[2][7] == "Hard to obtain. + no bank facility"  # starts with text: left as it is
