@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import asyncio
+import heapq
+import itertools
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from typing import Any
@@ -62,6 +64,38 @@ def build_extract_prompt(chunk: list[Page]) -> str:
         parts.append("")
     parts.append("=== END OF PAGES ===")
     return "\n".join(parts)
+
+
+class OrderedSlots:
+    """A semaphore that hands a free slot to the waiting chunk earliest in the document, not to the
+    one that asked first. A chunk that waited for its scanned pages to be transcribed is read next,
+    instead of after every chunk that queued while it waited (which made it the slow tail of a run)."""
+
+    def __init__(self, size: int) -> None:
+        self._free = size
+        self._waiting: list[tuple[int, int, asyncio.Future[None]]] = []
+        self._order = itertools.count()
+
+    async def acquire(self, key: int) -> None:
+        if self._free > 0 and not self._waiting:
+            self._free -= 1
+            return
+        future: asyncio.Future[None] = asyncio.get_running_loop().create_future()
+        heapq.heappush(self._waiting, (key, next(self._order), future))
+        try:
+            await future
+        except asyncio.CancelledError:
+            if future.done() and not future.cancelled():  # the slot came with the cancellation: pass it on
+                self.release()
+            raise
+
+    def release(self) -> None:
+        while self._waiting:
+            _, _, future = heapq.heappop(self._waiting)
+            if not future.done():
+                future.set_result(None)
+                return
+        self._free += 1
 
 
 @dataclass
@@ -128,19 +162,27 @@ async def extract_requirements(
     concurrency: int = 4,
     on_chunk_done: Callable[[list[Page], int, bool], Awaitable[None]] | None = None,
     effort: str | None = None,
+    before_chunk: Callable[[list[Page]], Awaitable[None]] | None = None,
 ) -> ExtractOutcome:
-    """Run every chunk through the reader model, `concurrency` at a time, in document order."""
-    sem = asyncio.Semaphore(concurrency)
+    """Run every chunk through the reader model, `concurrency` at a time, in document order.
+
+    `before_chunk` is awaited before a chunk asks for a reader slot (the pipeline uses it to wait for
+    the chunk's scanned pages to be transcribed), so a waiting chunk never holds a slot; free slots go
+    to the waiting chunk earliest in the document."""
+    slots = OrderedSlots(concurrency)
     outcome = ExtractOutcome()
     results: list[list[Requirement]] = [[] for _ in chunks]
 
     async def one(index: int, chunk: list[Page]) -> None:
+        if before_chunk:
+            await before_chunk(chunk)
         label = f"pages {chunk[0].number}-{chunk[-1].number}"
         if not any(p.text.strip() for p in chunk):
             if on_chunk_done:
                 await on_chunk_done(chunk, 0, True)
             return
-        async with sem:
+        await slots.acquire(index)
+        try:
             last_error: Exception | None = None
             for _attempt in range(2):
                 try:
@@ -162,6 +204,8 @@ async def extract_requirements(
             if last_error is not None:
                 outcome.failed_chunks.append(f"{label}: {last_error}")
                 outcome.failed_pages += len(chunk)
+        finally:
+            slots.release()
         if on_chunk_done:
             await on_chunk_done(chunk, len(results[index]), last_error is None)
 

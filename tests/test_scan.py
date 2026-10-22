@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import json
 from typing import Any
@@ -13,7 +14,8 @@ import pytest
 from reader.config import Settings
 from reader.llm import FakeLLM, LLMError, NebiusClient
 from reader.models import Page, Requirement
-from reader.pages import MAX_SIDE_PX, extract_pages, render_page
+from reader.extract import OrderedSlots, extract_requirements
+from reader.pages import MAX_SIDE_PX, chunk_pages, extract_pages, render_page
 from reader.pipeline import run_reader
 from reader.scan import VISION_SYSTEM, clean_transcription, read_scans
 from reader.verify import verify_requirements
@@ -149,8 +151,10 @@ async def test_pipeline_reads_a_mixed_pdf_and_marks_what_came_from_scans() -> No
     assert pages_event["scans"] == [2, 3] and pages_event["scans_over_cap"] == [] and pages_event["empty_pages"] == [5]
     scans = [e for e in events if e["type"] == "scan"]
     assert sorted(e["page"] for e in scans) == [2, 3] and all(e["ok"] for e in scans)
-    kinds = [e["type"] for e in events]
-    assert kinds.index("scan") < kinds.index("progress")  # scans are read before the reader sees the pages
+    # the chunk holding the scans is read only after both are transcribed (the text-only chunk 4-5 may
+    # finish earlier)
+    order = [(e["type"], e.get("page") or e.get("chunk")) for e in events if e["type"] in ("scan", "progress")]
+    assert order.index(("progress", "1-3")) > max(order.index(("scan", 2)), order.index(("scan", 3)))
 
     s = result.stats
     assert s.scanned_pages == [2, 3] and s.scan_failed_pages == [] and s.scan_skipped_pages == [] and s.scan_cap == 40
@@ -203,3 +207,102 @@ async def test_nebius_chat_image_request_shape() -> None:
     assert parts[1]["image_url"]["url"] == "data:image/png;base64," + base64.b64encode(b"\x89PNG-bytes").decode()
     with pytest.raises(LLMError, match="ran out of tokens"):  # a reply that hits the budget is a loop, not a page
         await client.chat_image(model="m", system="s", user="u", image=b"x", mime="image/png", effort="none")
+
+
+class GatedVision(FakeLLM):
+    """Holds every page image until the test opens the gate, and records when the reader starts."""
+
+    def __init__(self, transcripts: dict[int, str]) -> None:
+        super().__init__(transcripts)
+        self.gate = asyncio.Event()
+        self.log: list[str] = []
+
+    async def chat_image(self, **kwargs: Any) -> str:
+        await self.gate.wait()
+        self.log.append("scan " + kwargs["user"].split()[1])
+        return await super().chat_image(**kwargs)
+
+    async def chat_json(self, **kwargs: Any) -> dict[str, Any]:
+        if kwargs["schema_name"] == "requirements":
+            self.log.append(kwargs["user"].splitlines()[0])
+        return await super().chat_json(**kwargs)
+
+
+async def test_text_chunks_are_read_while_scans_are_transcribed() -> None:
+    # pages 1-2 text, 3-4 scans: chunk 1-2 must not wait for the vision model; chunk 3-4 must
+    pdf = make_scanned_pdf([("text", TENDER_PAGES[0]), ("text", TENDER_PAGES[4]), ("scan", TENDER_PAGES[1]), ("scan", TENDER_PAGES[3])], dpi=50)
+    llm = GatedVision({3: TENDER_PAGES[1], 4: TENDER_PAGES[3]})
+    settings = Settings(fake_llm=True, chunk_pages=2, scan_dpi=50)
+    run = asyncio.create_task(run_reader(settings=settings, llm=llm, pdf=pdf))
+    for _ in range(200):  # let the pipeline run until it can go no further without the scans
+        await asyncio.sleep(0)
+        if llm.log:
+            break
+    await asyncio.sleep(0.05)
+    assert llm.log == ["Tender pages 1 to 2."]  # the text chunk was read; the scanned chunk waits
+    llm.gate.set()
+    result, _ = await run
+    assert llm.log[-1] == "Tender pages 3 to 4." and sorted(llm.log[1:3]) == ["scan 3", "scan 4"]
+    assert result.stats.scanned_pages == [3, 4] and result.stats.pages_read == 4
+    assert {r.page for r in result.requirements if r.scanned} == {3, 4}
+
+
+async def test_a_failing_scan_task_never_leaves_a_chunk_waiting() -> None:
+    # the scan task dies outright (here: the progress stream breaks on the first scan event) with two
+    # scans still queued: the run must stop with the error, not wait for ever on the chunk's scans
+    async def emit(event: dict[str, Any]) -> None:
+        if event["type"] == "scan":
+            raise RuntimeError("the browser went away")
+
+    pdf = make_scanned_pdf([("text", TENDER_PAGES[0])] + [("scan", TENDER_PAGES[i]) for i in (1, 3, 4)], dpi=50)
+    llm = FakeLLM({2: TENDER_PAGES[1], 3: TENDER_PAGES[3], 4: TENDER_PAGES[4]})
+    settings = Settings(fake_llm=True, chunk_pages=2, concurrency=1, scan_dpi=50)
+    with pytest.raises(RuntimeError, match="browser went away"):
+        await asyncio.wait_for(run_reader(settings=settings, llm=llm, pdf=pdf, emit=emit), timeout=5)
+
+
+async def test_ordered_slots_go_to_the_earliest_chunk_and_survive_cancellation() -> None:
+    slots = OrderedSlots(1)
+    await slots.acquire(0)
+    got: list[int] = []
+
+    async def take(key: int) -> None:
+        await slots.acquire(key)
+        got.append(key)
+
+    late, early, gone = asyncio.create_task(take(9)), asyncio.create_task(take(3)), asyncio.create_task(take(1))
+    await asyncio.sleep(0)
+    gone.cancel()  # a waiter that goes away while queued must not take or lose a slot
+    await asyncio.sleep(0)
+    slots.release()
+    await asyncio.sleep(0)
+    assert got == [3]  # asked second, but earlier in the document
+    slots.release()
+    await asyncio.gather(late, early)
+    assert got == [3, 9]
+    slots.release()
+    await slots.acquire(5)  # the one slot is free again: no slot was lost to the cancelled waiter
+    slots.release()
+
+
+async def test_a_chunk_that_waited_for_its_scans_is_read_before_later_chunks() -> None:
+    order: list[str] = []
+    gate = asyncio.Event()
+
+    class Logged(FakeLLM):
+        async def chat_json(self, **kwargs: Any) -> dict[str, Any]:
+            order.append(kwargs["user"].splitlines()[0])
+            if len(order) == 1:
+                gate.set()  # chunk 1's scans are done while chunk 2 holds the only slot
+                await asyncio.sleep(0.01)
+            return await super().chat_json(**kwargs)
+
+    async def scans_of_chunk_1(chunk: list[Page]) -> None:
+        if chunk[0].number == 1:
+            await gate.wait()
+
+    from tests.conftest import make_pdf
+
+    chunks = chunk_pages(extract_pages(make_pdf(TENDER_PAGES[:5])), 1)
+    await extract_requirements(chunks, Logged(), "m", concurrency=1, before_chunk=scans_of_chunk_1)
+    assert order == ["Tender pages 2 to 2.", "Tender pages 1 to 1.", "Tender pages 3 to 3.", "Tender pages 4 to 4.", "Tender pages 5 to 5."]

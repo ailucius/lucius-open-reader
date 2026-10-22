@@ -100,10 +100,27 @@ class NebiusClient:
         self._transport = transport
         self._max_tokens = max_tokens
         self.thinking_retries = 0  # answers that came back empty and were asked again without thinking
+        # tokens billed per model, from each reply's `usage`: {model: {"calls", "prompt_tokens", "completion_tokens"}}
+        self.usage: dict[str, dict[str, int]] = {}
 
     async def _post(self, body: dict[str, Any]) -> httpx.Response:
         async with httpx.AsyncClient(timeout=self._timeout, transport=self._transport) as client:
-            return await client.post(self._url, headers=self._headers, json=body)
+            resp = await client.post(self._url, headers=self._headers, json=body)
+        self._count(str(body.get("model")), resp)
+        return resp
+
+    def _count(self, model: str, resp: httpx.Response) -> None:
+        if resp.status_code >= 400:
+            return
+        try:
+            usage = resp.json().get("usage") or {}
+        except (ValueError, AttributeError):
+            return
+        row = self.usage.setdefault(model, {"calls": 0, "prompt_tokens": 0, "completion_tokens": 0})
+        row["calls"] += 1
+        for key in ("prompt_tokens", "completion_tokens"):
+            value = usage.get(key)
+            row[key] += value if isinstance(value, int) else 0
 
     async def chat_json(
         self,

@@ -14,7 +14,7 @@ from .fetch import check_pdf_bytes, fetch_pdf
 from .llm import LLMClient
 from .models import Page, ReadStats, RunResult
 from .pages import chunk_pages, extract_pages
-from .scan import plan_scans, read_scans
+from .scan import ScanOutcome, plan_scans, read_scans
 from .verify import verify_requirements
 
 Event = dict[str, Any]
@@ -74,7 +74,11 @@ async def run_reader(
         }
     )
 
-    unread_scans: set[int] = set(over_cap)
+    # Scanned pages are read from their image while the text chunks are read: a chunk starts as soon
+    # as its own scanned pages are transcribed, so the scans add little to the time of a mixed tender.
+    unread_scans: set[int] = set(over_cap)  # scans over the cap, then scans the vision model failed on
+    scan_ready: dict[int, asyncio.Event] = {p.number: asyncio.Event() for p in to_scan}
+    scan_task: asyncio.Task[ScanOutcome] | None = None
     if to_scan:
         await emit(
             {
@@ -89,34 +93,45 @@ async def run_reader(
 
         async def on_scan(page: Page, ok: bool) -> None:
             nonlocal scans_done
-            async with scan_lock:
-                scans_done += 1
-                await emit(
-                    {
-                        "type": "scan",
-                        "page": page.number,
-                        "ok": ok,
-                        "chars": len(page.text) if ok else 0,
-                        "done": scans_done,
-                        "total": len(to_scan),
-                    }
-                )
+            try:
+                async with scan_lock:
+                    scans_done += 1
+                    if not ok:
+                        unread_scans.add(page.number)
+                    await emit(
+                        {
+                            "type": "scan",
+                            "page": page.number,
+                            "ok": ok,
+                            "chars": len(page.text) if ok else 0,
+                            "done": scans_done,
+                            "total": len(to_scan),
+                        }
+                    )
+            finally:
+                scan_ready[page.number].set()
 
-        scanned = await read_scans(
-            pdf,
-            pages,
-            llm,
-            settings.vision_model,
-            cap=settings.max_scan_pages,
-            dpi=settings.scan_dpi,
-            concurrency=settings.concurrency,
-            effort=settings.vision_effort,
-            on_page=on_scan,
+        scan_task = asyncio.create_task(
+            read_scans(
+                pdf,
+                pages,
+                llm,
+                settings.vision_model,
+                cap=settings.max_scan_pages,
+                dpi=settings.scan_dpi,
+                concurrency=settings.concurrency,
+                effort=settings.vision_effort,
+                on_page=on_scan,
+            )
         )
-        stats.scanned_pages = scanned.read
-        stats.scan_failed_pages = scanned.failed
-        unread_scans.update(scanned.failed)
-    stats.scan_skipped_pages = over_cap
+        # whatever happens to the scan task, no chunk waits for ever
+        scan_task.add_done_callback(lambda _task: [event.set() for event in scan_ready.values()])
+
+    async def scans_first(chunk: list[Page]) -> None:
+        for page in chunk:
+            event = scan_ready.get(page.number)
+            if event is not None:
+                await event.wait()
 
     found = 0
     done_pages = 0
@@ -147,9 +162,23 @@ async def run_reader(
             )
 
     await emit({"type": "stage", "stage": "read", "message": f"Reading with {settings.reader_model}"})
-    outcome = await extract_requirements(
-        chunks, llm, settings.reader_model, settings.concurrency, on_chunk, effort=settings.reader_effort
-    )
+    try:
+        outcome = await extract_requirements(
+            chunks,
+            llm,
+            settings.reader_model,
+            settings.concurrency,
+            on_chunk,
+            effort=settings.reader_effort,
+            before_chunk=scans_first,
+        )
+        scanned = await scan_task if scan_task else ScanOutcome()
+    finally:
+        if scan_task and not scan_task.done():
+            scan_task.cancel()
+    stats.scanned_pages = scanned.read
+    stats.scan_failed_pages = scanned.failed
+    stats.scan_skipped_pages = over_cap
 
     await emit({"type": "stage", "stage": "verify", "message": "Checking every quote against its page"})
     reqs = verify_requirements(outcome.requirements, pages, settings.verify_threshold)

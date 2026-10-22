@@ -20,6 +20,7 @@ from .pages import render_page
 
 VISION_SYSTEM = """You transcribe one scanned page of a public tender document, for a reader that checks quotes word for word.
 Copy every word exactly as printed, in reading order, line by line: headings, paragraphs, numbered and bulleted items, table rows (one row per line, cells separated by " | "), stamps, headers and footers.
+Leave out line numbers printed in the margin (legal texts number every line); keep the numbering of items and clauses.
 Do not translate, summarise, correct spelling or add anything that is not on the page. Write [illegible] for a word you cannot read.
 If the page has no readable text, reply with exactly: NO TEXT
 Reply with the transcription only."""
@@ -104,7 +105,12 @@ async def read_scans(
         if on_page:
             await on_page(page, last_error is None)
 
-    await asyncio.gather(*(one(p) for p in todo))
+    tasks = [asyncio.create_task(one(p)) for p in todo]
+    try:
+        await asyncio.gather(*tasks)
+    finally:  # if one page's task fails outright (not a page error), the rest are not left running
+        for task in tasks:
+            task.cancel()
     outcome.read.sort()
     outcome.failed.sort()
     outcome.errors.sort(key=lambda e: int(e.split()[1].rstrip(":")))

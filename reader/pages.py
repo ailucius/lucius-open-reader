@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import threading
+
 import pymupdf
 
 from .models import Page
@@ -16,6 +18,11 @@ SCAN_MIN_IMAGE_SHARE = 0.3
 MAX_SIDE_PX = 2000
 PNG_LIMIT_BYTES = 900_000
 JPEG_QUALITY = 80
+
+
+# MuPDF is not thread-safe, even across separate documents: every use runs under this lock (pages
+# are extracted and rendered in worker threads, and two runs can overlap on the server).
+_MUPDF = threading.Lock()
 
 
 class PdfError(ValueError):
@@ -49,7 +56,7 @@ def _open(pdf: bytes) -> pymupdf.Document:
 
 
 def extract_pages(pdf: bytes, max_pages: int = 500) -> list[Page]:
-    with _open(pdf) as doc:
+    with _MUPDF, _open(pdf) as doc:
         if doc.needs_pass:
             raise PdfError("PDF is password protected")
         if doc.page_count > max_pages:
@@ -63,7 +70,7 @@ def extract_pages(pdf: bytes, max_pages: int = 500) -> list[Page]:
 
 def render_page(pdf: bytes, number: int, dpi: int = 150) -> tuple[bytes, str]:
     """One page as an image for the vision model: (bytes, MIME type)."""
-    with _open(pdf) as doc:
+    with _MUPDF, _open(pdf) as doc:
         page = doc[number - 1]
         long_side_in = max(page.rect.width, page.rect.height) / 72
         dpi = max(36, min(dpi, int(MAX_SIDE_PX / long_side_in))) if long_side_in > 0 else dpi

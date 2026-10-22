@@ -40,6 +40,8 @@ async def _main(args: argparse.Namespace) -> int:
         emit=_progress if args.progress else _silent,
     )
     print(result.model_dump_json(indent=2))
+    if args.progress and getattr(llm, "usage", None):
+        await _progress({"type": "usage", "tokens": llm.usage})  # tokens billed per model
     return 0
 
 
