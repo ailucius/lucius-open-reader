@@ -92,6 +92,7 @@ def test_summary_sheet_says_what_was_read_and_what_decides() -> None:
     assert summary["Scans over the cap"] == "Pages 9 are scans and were not read: the cap is 2 scanned pages a run."
     assert summary["Blank pages"] == "7"
     assert summary["Call"] == "No bid" and summary["Confidence"] == "80%"
+    assert summary["Line of work"] == "Fits your line of work. A pipeline."
     assert summary["Judgments"] == "1 fail, 1 to confirm, 0 met, 1 routine forms"
     assert summary["Generated"] == "2026-10-21 18:30 UTC"
     assert "does not replace reading the tender" in summary["Note"]

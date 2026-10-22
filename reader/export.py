@@ -39,7 +39,7 @@ COLUMNS: list[tuple[str, int]] = [  # (header, width in characters)
 ]
 JUDGMENT = {"fails": "fails", "not stated": "to confirm", "met": "met", "routine": "routine form"}
 VERDICT = {"bid": "Bid", "bid with conditions": "Bid, with conditions", "no bid": "No bid"}
-FIT = {"fits": "your line of work", "partly": "partly your line of work", "outside": "outside your line of work"}
+FIT = {"fits": "Fits your line of work", "partly": "Partly your line of work", "outside": "Outside your line of work"}
 NOT_A_SUBSTITUTE = (
     "This checklist is a reading aid made with AI models. It does not replace reading the tender: "
     "check every item against the tender documents before you bid."
