@@ -5,8 +5,10 @@ from __future__ import annotations
 import asyncio
 import ipaddress
 import socket
+from collections.abc import Iterable
 from urllib.parse import urljoin, urlsplit
 
+import httpcore
 import httpx
 
 from .config import Settings
@@ -24,6 +26,24 @@ def check_pdf_bytes(data: bytes) -> None:
         raise FetchError("the file is not a PDF (no %PDF- header)")
 
 
+async def _public_addresses(host: str, port: int) -> list[str]:
+    """The addresses `host` resolves to, or FetchError if any of them is not public."""
+    try:
+        ip = ipaddress.ip_address(host)
+        addrs = [ip]
+    except ValueError:
+        loop = asyncio.get_running_loop()
+        try:
+            infos = await loop.getaddrinfo(host, port)
+        except socket.gaierror as exc:
+            raise FetchError(f"cannot resolve host {host}") from exc
+        addrs = [ipaddress.ip_address(info[4][0]) for info in infos]
+    for addr in addrs:
+        if not addr.is_global:
+            raise FetchError(f"host {host} resolves to a non-public address")
+    return list(dict.fromkeys(str(addr) for addr in addrs))
+
+
 async def _assert_public_host(url: str, allow_private: bool) -> None:
     parts = urlsplit(url)
     if parts.scheme not in ("http", "https"):
@@ -33,19 +53,58 @@ async def _assert_public_host(url: str, allow_private: bool) -> None:
         raise FetchError("URL has no host")
     if allow_private:
         return
-    try:
-        ip = ipaddress.ip_address(host)
-        addrs = [ip]
-    except ValueError:
-        loop = asyncio.get_running_loop()
-        try:
-            infos = await loop.getaddrinfo(host, parts.port or (443 if parts.scheme == "https" else 80))
-        except socket.gaierror as exc:
-            raise FetchError(f"cannot resolve host {host}") from exc
-        addrs = [ipaddress.ip_address(info[4][0]) for info in infos]
-    for addr in addrs:
-        if not addr.is_global:
-            raise FetchError(f"host {host} resolves to a non-public address")
+    await _public_addresses(host, parts.port or (443 if parts.scheme == "https" else 80))
+
+
+class _PublicOnlyBackend(httpcore.AsyncNetworkBackend):
+    """Connects only to an address it has just checked is public.
+
+    `_assert_public_host` checks each URL before its request, but the client resolves the host again
+    to connect, and a DNS server can answer a public address to the check and a private one to the
+    connection (DNS rebinding). Here the address that passed the check is the one connected to; TLS
+    still verifies the certificate against the host name in the URL.
+    """
+
+    def __init__(self) -> None:
+        self._inner = httpcore.AnyIOBackend()
+
+    async def connect_tcp(
+        self,
+        host: str,
+        port: int,
+        timeout: float | None = None,
+        local_address: str | None = None,
+        socket_options: Iterable[httpcore.SOCKET_OPTION] | None = None,
+    ) -> httpcore.AsyncNetworkStream:
+        error: Exception = httpcore.ConnectError(f"cannot connect to {host}")
+        for addr in await _public_addresses(host, port):
+            try:
+                return await self._inner.connect_tcp(
+                    addr, port, timeout=timeout, local_address=local_address, socket_options=socket_options
+                )
+            except (httpcore.ConnectError, httpcore.ConnectTimeout) as exc:
+                error = exc
+        raise error
+
+    async def sleep(self, seconds: float) -> None:
+        await self._inner.sleep(seconds)
+
+
+class _PublicTransport(httpx.AsyncHTTPTransport):
+    """httpx's transport with its connection pool connecting through `_PublicOnlyBackend`."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        # httpx 0.28 takes no network backend, so the pool is rebuilt with one (httpx is pinned).
+        self._pool = httpcore.AsyncConnectionPool(
+            ssl_context=httpx.create_ssl_context(), network_backend=_PublicOnlyBackend()
+        )
+
+
+def _transport(settings: Settings, transport: httpx.AsyncBaseTransport | None) -> httpx.AsyncBaseTransport | None:
+    if transport is not None or settings.allow_private_urls:
+        return transport
+    return _PublicTransport()
 
 
 async def fetch_pdf(
@@ -59,7 +118,7 @@ async def fetch_pdf(
     async with httpx.AsyncClient(
         timeout=timeout,
         follow_redirects=False,
-        transport=transport,
+        transport=_transport(settings, transport),
         headers={"User-Agent": USER_AGENT, "Accept": "application/pdf,*/*"},
     ) as client:
         current = url
@@ -102,7 +161,7 @@ async def probe_document(
     async with httpx.AsyncClient(
         timeout=timeout,
         follow_redirects=False,
-        transport=transport,
+        transport=_transport(settings, transport),
         headers={"User-Agent": USER_AGENT, "Accept": "application/pdf,*/*", "Range": "bytes=0-2047"},
     ) as client:
         current = url

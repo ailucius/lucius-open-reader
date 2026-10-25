@@ -3,10 +3,15 @@
 from __future__ import annotations
 
 import json
+import socket
+import threading
+from collections.abc import Iterator
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 import httpx
 import pytest
 
+from reader import fetch
 from reader.config import Settings
 from reader.fetch import FetchError, fetch_pdf
 from reader.find import FindError, guess_buyer, search_tenders
@@ -52,6 +57,68 @@ async def test_fetch_blocks_redirect_to_private_host() -> None:
     transport = httpx.MockTransport(lambda r: httpx.Response(302, headers={"location": "http://127.0.0.1/x.pdf"}))
     with pytest.raises(FetchError, match="non-public"):
         await fetch_pdf(f"{PUBLIC}/start", Settings(), transport=transport)
+
+
+@pytest.fixture
+def local_pdf_server(tender_pdf: bytes) -> Iterator[tuple[int, list[str]]]:
+    """A PDF server on 127.0.0.1: (its port, the Host header of every request it got)."""
+    hosts: list[str] = []
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:
+            hosts.append(self.headers.get("Host", ""))
+            self.send_response(200)
+            self.send_header("Content-Type", "application/pdf")
+            self.send_header("Content-Length", str(len(tender_pdf)))
+            self.end_headers()
+            self.wfile.write(tender_pdf)
+
+        def log_message(self, *args: object) -> None:
+            pass
+
+    server = ThreadingHTTPServer(("127.0.0.1", 0), Handler)
+    threading.Thread(target=server.serve_forever, daemon=True).start()
+    yield server.server_address[1], hosts
+    server.shutdown()
+    server.server_close()
+
+
+async def test_fetch_refuses_a_host_that_rebinds_to_a_private_address(
+    local_pdf_server: tuple[int, list[str]], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """DNS rebinding: the name answers a public address to the check and a private one when the
+    client connects. The private address must never be connected to."""
+    port, hosts = local_pdf_server
+    real = socket.getaddrinfo
+    answers = iter(["8.8.8.8"])  # the first lookup gets a public address, every later one 127.0.0.1
+
+    def rebinding(host: str | bytes, *args: object, **kwargs: object) -> list[tuple[object, ...]]:
+        if host in ("rebind.test", b"rebind.test"):  # httpx's resolver asks with the name as bytes
+            return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", (next(answers, "127.0.0.1"), port))]
+        return real(host, *args, **kwargs)  # type: ignore[arg-type]
+
+    monkeypatch.setattr(socket, "getaddrinfo", rebinding)
+    with pytest.raises(FetchError, match="non-public"):
+        await fetch_pdf(f"http://rebind.test:{port}/t.pdf", Settings())
+    assert hosts == []
+
+
+async def test_fetch_connects_to_the_address_it_checked(
+    local_pdf_server: tuple[int, list[str]], tender_pdf: bytes, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    port, hosts = local_pdf_server
+
+    async def checked(host: str, _port: int) -> list[str]:
+        assert host == "docs.test"
+        return ["127.0.0.1"]  # stands in for a public address
+
+    def no_second_lookup(host: str | bytes, *args: object, **kwargs: object) -> None:
+        raise AssertionError(f"{host!r} was resolved again after the check")
+
+    monkeypatch.setattr(fetch, "_public_addresses", checked)
+    monkeypatch.setattr(socket, "getaddrinfo", no_second_lookup)
+    assert await fetch_pdf(f"http://docs.test:{port}/t.pdf", Settings()) == tender_pdf
+    assert hosts == [f"docs.test:{port}"]  # the request still names the host it was sent to
 
 
 async def test_tavily_search_shapes_hits() -> None:
