@@ -95,8 +95,11 @@ def create_app(settings: Settings | None = None, llm: LLMClient | None = None) -
     example_files: dict[str, tuple[bytes, str, str]] = {}  # the example's checklist per format, built once
 
     def client_address(request: Request) -> str:
-        forwarded = request.headers.get("x-forwarded-for", "")
-        return forwarded.split(",")[0].strip() or (request.client.host if request.client else "unknown")
+        # The LAST entry, which Cloud Run's front end appends (25 Oct 2026): the
+        # first is whatever the visitor sent, so keying the limits on it let
+        # anyone pass the per-address limit by changing the header.
+        hops = [h.strip() for h in request.headers.get("x-forwarded-for", "").split(",") if h.strip()]
+        return hops[-1] if hops else (request.client.host if request.client else "unknown")
 
     def check_search_limits(address: str) -> None:
         """Searches are cheaper than runs: four times the run limits, when those are set."""

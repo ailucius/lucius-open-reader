@@ -85,6 +85,18 @@ def test_web_runs_are_limited_per_address_and_per_day(tender_pdf: bytes) -> None
         assert day.status_code == 429 and "today" in day.json()["detail"]
 
 
+
+def test_a_visitor_cannot_pass_the_hourly_limit_by_changing_the_forwarded_header(tender_pdf: bytes) -> None:
+    # Cloud Run appends the real address last; the entries before it are the visitor's own.
+    files = {"file": ("tender.pdf", tender_pdf, "application/pdf")}
+    app = create_app(Settings(fake_llm=True, runs_per_hour_per_ip=2, runs_per_day=10))
+    with TestClient(app) as client:
+        for fake in ("1.1.1.1", "2.2.2.2"):
+            r = client.post("/api/runs", files=files, headers={"x-forwarded-for": f"{fake}, 198.51.100.7"})
+            assert r.status_code == 200
+        third = client.post("/api/runs", files=files, headers={"x-forwarded-for": "3.3.3.3, 198.51.100.7"})
+        assert third.status_code == 429 and "hour" in third.json()["detail"]
+
 def test_example_route_serves_the_saved_run_when_present() -> None:
     from reader.app import EXAMPLE
 
