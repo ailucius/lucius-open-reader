@@ -7,15 +7,19 @@ from dataclasses import dataclass
 
 # Verified 2026-10-15 against https://docs.tokenfactory.nebius.com/api-reference/introduction.md
 DEFAULT_NEBIUS_BASE_URL = "https://api.tokenfactory.nebius.com/v1/"
-# Verified 2026-10-15 against https://tokenfactory.nebius.com/model-catalog.md
-DEFAULT_READER_MODEL = "nvidia/nemotron-3-super-120b-a12b"
+# Since 2026-10-30: Token Factory retires nvidia/nemotron-3-super-120b-a12b (the reader until then) on
+# 2026-11-09 and recommends Nemotron 3.5 Super VL in its place
+# (https://docs.tokenfactory.nebius.com/model-deprecations-november-2026.md).
+DEFAULT_READER_MODEL = "nvidia/Nemotron-3.5-Super-VL"
 DEFAULT_DECIDER_MODEL = "nvidia/Nemotron-3-Ultra-550b-a55b"
 # Confirmed 2026-10-21 in GET {NEBIUS_BASE_URL}models; it takes OpenAI-style image_url parts with a
 # base64 data URL and answered a test page word for word in about 2 seconds with thinking off.
 DEFAULT_VISION_MODEL = "nvidia/Nemotron-3.5-Super-VL"
-# Measured 2026-10-15 on a 44-page tender: at the default or "medium" effort the reader thought for
-# 8k-12k tokens on dense pages and returned nothing; "low" answered every chunk in about 8 seconds.
-DEFAULT_READER_EFFORT = "low"
+# Measured 2026-10-30 on the 44-page tender: with thinking on ("low") Nemotron 3.5 Super VL used 15,986 of
+# the 16,384 tokens on the first 6-page chunk and in a full run the reply was cut off twice, losing the
+# chunk; with thinking off the same chunk answered in 6 seconds (2,858 tokens) and all 44 pages were read.
+# (Nemotron 3 Super, the reader until 2026-10-30, needed "low": more thinking returned nothing.)
+DEFAULT_READER_EFFORT = "none"
 DEFAULT_DECIDER_EFFORT = "low"
 # Copying a page needs no reasoning. Measured 2026-10-21: with thinking on, 235 of the 273 answer
 # tokens for a three-line page were thinking; with it off, a denser page with a table came back word
@@ -64,8 +68,10 @@ class Settings:
     decider_effort: str | None = DEFAULT_DECIDER_EFFORT
     max_tokens: int = 16384
     finder_model: str = DEFAULT_READER_MODEL
-    finder_effort: str | None = "high"
-    finder_temperature: float = 0.6
+    # 2026-10-30, Nemotron 3.5 Super VL: with thinking on (low, medium or high) it picked no documents on
+    # a city bid page where thinking off picked all four (specifications, drawings, an addendum).
+    finder_effort: str | None = "none"
+    finder_temperature: float = 0.0
     vision_model: str = DEFAULT_VISION_MODEL
     vision_effort: str | None = DEFAULT_VISION_EFFORT
     scan_dpi: int = 150  # an A4 page is 1240 x 1755 pixels, about 2,300 input tokens
@@ -99,8 +105,8 @@ class Settings:
             decider_effort=_effort("DECIDER_EFFORT", DEFAULT_DECIDER_EFFORT),
             max_tokens=max(1024, _int("READER_MAX_TOKENS", 16384)),
             finder_model=os.environ.get("FINDER_MODEL") or DEFAULT_READER_MODEL,
-            finder_effort=_effort("FINDER_EFFORT", "high"),
-            finder_temperature=_float("FINDER_TEMPERATURE", 0.6),
+            finder_effort=_effort("FINDER_EFFORT", "none"),
+            finder_temperature=_float("FINDER_TEMPERATURE", 0.0),
             vision_model=os.environ.get("VISION_MODEL") or DEFAULT_VISION_MODEL,
             vision_effort=_effort("VISION_EFFORT", DEFAULT_VISION_EFFORT),
             scan_dpi=min(300, max(72, _int("READER_SCAN_DPI", 150))),

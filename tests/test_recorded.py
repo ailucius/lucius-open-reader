@@ -17,13 +17,16 @@ from typing import Any
 import httpx
 from openpyxl import load_workbook
 
-from reader.config import DEFAULT_DECIDER_MODEL, DEFAULT_READER_MODEL, DEFAULT_VISION_MODEL, Settings
+from reader.config import DEFAULT_DECIDER_MODEL, DEFAULT_VISION_MODEL, Settings
 from reader.export import checklist_xlsx
 from reader.llm import NebiusClient
 from reader.pipeline import run_reader
 from tests.fixtures.record_scan_run import PROFILE, recorded_pdf, replay_key
 
 RECORDING = json.loads((Path(__file__).parent / "fixtures" / "scan_run.json").read_text())
+# The run was recorded on 22 Oct 2026, when Nemotron 3 Super read the pages with thinking "low"; the
+# replay pins that reader so it sends the same requests.
+RECORDED_READER_MODEL = "nvidia/nemotron-3-super-120b-a12b"
 
 
 class Replay(httpx.AsyncBaseTransport):
@@ -51,7 +54,7 @@ async def _replay() -> tuple[Any, Replay, NebiusClient]:
     replay = Replay()
     client = NebiusClient("nb-test", RECORDING["base_url"], transport=replay)
     result, _ = await run_reader(
-        settings=Settings(nebius_api_key="nb-test"), llm=client, profile=PROFILE, pdf=recorded_pdf(), source_name="W-2026-14.pdf"
+        settings=Settings(nebius_api_key="nb-test", reader_model=RECORDED_READER_MODEL, reader_effort="low"), llm=client, profile=PROFILE, pdf=recorded_pdf(), source_name="W-2026-14.pdf"
     )
     return result, replay, client
 
@@ -66,7 +69,7 @@ async def test_replay_uses_every_recorded_call_once() -> None:
         (k, max(c["attempt"] for c in RECORDING["calls"] if c["key"] == k)) for k in {c["key"] for c in RECORDING["calls"]}
     )
     assert client.usage == RECORDING["usage"]  # tokens counted from each reply's usage, per model
-    assert set(client.usage) == {DEFAULT_VISION_MODEL, DEFAULT_READER_MODEL, DEFAULT_DECIDER_MODEL}
+    assert set(client.usage) == {DEFAULT_VISION_MODEL, RECORDED_READER_MODEL, DEFAULT_DECIDER_MODEL}
 
 
 async def test_the_scanned_pages_go_to_the_vision_model_as_images() -> None:
@@ -85,7 +88,7 @@ async def test_the_scanned_pages_go_to_the_vision_model_as_images() -> None:
 
 async def test_the_reader_reads_the_vision_models_transcription() -> None:
     _, replay, _ = await _replay()
-    reader = next(b for b in replay.bodies if b["model"] == DEFAULT_READER_MODEL)
+    reader = next(b for b in replay.bodies if b["model"] == RECORDED_READER_MODEL)
     prompt = reader["messages"][-1]["content"]
     for page in (2, 3):
         transcription = _reply_text(f"image | Page {page} of the tender. Transcribe it.").strip()

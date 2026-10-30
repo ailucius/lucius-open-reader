@@ -56,7 +56,7 @@ async def test_find_documents_reads_the_page_and_offers_only_real_pdfs() -> None
     assert [d.title for d in pdfs] == ["T 21/2026/27 Tender Document", "T 21/2026/27 Advert"]
     assert pdfs[0].size == 842000 and pdfs[0].found_on == "https://buyer.example/tenders/"
     assert [d.is_pdf for d in found.documents] == [True, True, False]  # the fake .pdf is listed last, not readable
-    assert llm.calls[0]["schema_name"] == "links" and llm.calls[0]["effort"] == "high"
+    assert llm.calls[0]["schema_name"] == "links" and llm.calls[0]["effort"] == "none"
 
 
 async def test_a_link_that_is_itself_a_pdf_needs_no_search() -> None:

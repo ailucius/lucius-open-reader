@@ -2,7 +2,7 @@
 
 Read a public tender before you bid.
 
-Give it a public tender PDF (or search for one). NVIDIA Nemotron 3 Super on Nebius Token Factory reads
+Give it a public tender PDF (or search for one). NVIDIA Nemotron 3.5 Super VL on Nebius Token Factory reads
 the document six pages at a time and lists every requirement with a verbatim quote and its page.
 Scanned pages, which have no text layer, are first read from the page image by NVIDIA Nemotron 3.5
 Super VL. Every quote is then checked against the page text, so you can see which items are grounded
@@ -37,7 +37,7 @@ visitor and per day; "Open a finished example" shows a saved live run without ca
    nothing on the council sites we tried, while Extract read them, hence the step loop.
 2. **Read.** The PDF is downloaded (http/https only, 40 MB cap, timeout, private addresses blocked),
    split into pages with PyMuPDF, grouped into chunks of about 6 pages, and each chunk is sent to the
-   reader model (Nemotron 3 Super) with a JSON schema. Chunks run concurrently with a small limit.
+   reader model (Nemotron 3.5 Super VL) with a JSON schema. Chunks run concurrently with a small limit.
    Each requirement has: `requirement` (plain English), `quote` (verbatim), `page`, `category`
    (eligibility, technical, commercial, legal, submission, other) and `mandatory`.
    **Scanned pages.** A page with no usable text layer but an image over it is drawn as an image and
@@ -109,7 +109,7 @@ visitor and per day; "Open a finished example" shows a saved live run without ca
                                          -> transcription            |            |
                                           |                          v            v
                                     llm.py  -- OpenAI-compatible HTTPS -->  Nebius Token Factory
-                                    (NebiusClient | FakeLLM)                READER_MODEL  (Nemotron 3 Super)
+                                    (NebiusClient | FakeLLM)                READER_MODEL  (Nemotron 3.5 Super VL)
                                                                             VISION_MODEL  (Nemotron 3.5 Super VL)
                                                                             DECIDER_MODEL (Nemotron 3 Ultra)
 ```
@@ -130,8 +130,14 @@ Nebius Token Factory serves an OpenAI-compatible API. `llm.py` calls it directly
   the system prompt (both forms are documented at
   <https://docs.tokenfactory.nebius.com/ai-models-inference/json.md>)
 - `temperature = 0`; reasoning blocks (`<think>...</think>`) and code fences are stripped before parsing
-- `reasoning_effort = "low"` for both models. Measured on the 44-page tender: at the default effort
-  Nemotron 3 Super spent the whole 8,192-token budget thinking on dense pages and returned an empty
+- Thinking off (`chat_template_kwargs = {"enable_thinking": false}`) for the reader and the document
+  finder since 30 Oct 2026, when they moved to Nemotron 3.5 Super VL: on the 44-page tender, with
+  thinking on (`"low"`) it used 15,986 of the 16,384 tokens on the first 6-page chunk and in a full run
+  the reply was cut off twice, so the chunk was lost; with thinking off the chunk answered in 6 seconds
+  and every page was read. With thinking on (low, medium or high) the finder picked no documents on a
+  city bid page where thinking off picked all four.
+- `reasoning_effort = "low"` for the decider, and for the reader until 30 Oct 2026. Measured on the
+  44-page tender: at the default effort Nemotron 3 Super spent the whole 8,192-token budget thinking on dense pages and returned an empty
   answer (`finish_reason: "length"`) for 2 of 8 chunks; at `"medium"` it thought for 12,486 tokens and
   returned no requirements; at `"low"` every chunk answered in about 8 seconds. For the decider,
   `"medium"` called boilerplate collusion declarations decisive. If an answer still comes back empty
@@ -149,9 +155,14 @@ call that transcribed a test page word for word in 1 second):
 
 | Role | Env var | Default id | USD per 1M tokens (in / out) |
 |---|---|---|---|
-| Reader (per chunk) and document finder | `READER_MODEL`, `FINDER_MODEL` | `nvidia/nemotron-3-super-120b-a12b` | 0.30 / 0.90 |
+| Reader (per chunk) and document finder | `READER_MODEL`, `FINDER_MODEL` | `nvidia/Nemotron-3.5-Super-VL` | 0.30 / 0.90 |
 | Scanned pages (one call per page image) | `VISION_MODEL` | `nvidia/Nemotron-3.5-Super-VL` | 0.30 / 0.90 |
 | Decider (scope, assessments, summary) | `DECIDER_MODEL` | `nvidia/Nemotron-3-Ultra-550b-a55b` | 1.00 / 3.00 |
+
+Until 30 Oct 2026 the reader and the finder ran on `nvidia/nemotron-3-super-120b-a12b`. Nebius Token
+Factory retires it on 9 Nov 2026 and recommends Nemotron 3.5 Super VL in its place
+(<https://docs.tokenfactory.nebius.com/model-deprecations-november-2026.md>). On the 44-page tender a
+live run on the new reader read all 44 pages and found all 113 quotes on their pages, with the same call.
 
 Prices are the catalog's on 22 Oct 2026.
 
@@ -270,7 +281,7 @@ key when a prompt changes):
 |---|---|---|
 | `NEBIUS_API_KEY` | none | Nebius Token Factory API key (required unless fake mode) |
 | `NEBIUS_BASE_URL` | `https://api.tokenfactory.nebius.com/v1/` | OpenAI-compatible base URL |
-| `READER_MODEL` | `nvidia/nemotron-3-super-120b-a12b` | model that reads each chunk |
+| `READER_MODEL` | `nvidia/Nemotron-3.5-Super-VL` | model that reads each chunk |
 | `DECIDER_MODEL` | `nvidia/Nemotron-3-Ultra-550b-a55b` | model that makes the bid call |
 | `VISION_MODEL` | `nvidia/Nemotron-3.5-Super-VL` | model that transcribes scanned pages |
 | `VISION_EFFORT` | `none` | its thinking (copying a page needs none) |
@@ -286,14 +297,14 @@ key when a prompt changes):
 | `READER_LLM_TIMEOUT` | `180` | seconds per model call |
 | `READER_MAX_PAGES` | `500` | longer PDFs are refused |
 | `READER_VERIFY_THRESHOLD` | `0.8` | share of quote 5-grams that must be on the page |
-| `READER_EFFORT` | `low` | reader thinking: `none`, `low`, `medium`, `high` or `default` |
+| `READER_EFFORT` | `none` | reader thinking: `none`, `low`, `medium`, `high` or `default` |
 | `DECIDER_EFFORT` | `low` | decider thinking, same values |
 | `READER_MAX_TOKENS` | `16384` | answer budget per model call (thinking included) |
 | `READER_RUNS_PER_HOUR_PER_IP` | `0` | runs one address may start per hour (`0`: no limit) |
 | `READER_RUNS_PER_DAY` | `0` | runs the server starts per day (`0`: no limit); searches get four times both limits |
-| `FINDER_MODEL` | `nvidia/nemotron-3-super-120b-a12b` | model that picks a page's tender documents |
-| `FINDER_EFFORT` | `high` | its thinking effort |
-| `FINDER_TEMPERATURE` | `0.6` | its temperature (NVIDIA's sampling for Nemotron when it reasons) |
+| `FINDER_MODEL` | `nvidia/Nemotron-3.5-Super-VL` | model that picks a page's tender documents |
+| `FINDER_EFFORT` | `none` | its thinking effort |
+| `FINDER_TEMPERATURE` | `0` | its temperature (with thinking on, NVIDIA suggests 0.6) |
 | `READER_ALLOW_PRIVATE_URLS` | `0` | `1` allows localhost / private hosts (local testing only) |
 
 ## Deploy on Nebius Serverless Endpoints
