@@ -233,7 +233,7 @@ def test_no_cell_can_run_as_a_formula() -> None:
 def test_example_checklist_is_built_once_and_off_the_event_loop(monkeypatch: pytest.MonkeyPatch) -> None:
     import threading
 
-    import reader.app as app_module
+    from reader import app as app_module
 
     if not EXAMPLE.is_file():
         return

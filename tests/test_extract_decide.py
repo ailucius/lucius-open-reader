@@ -4,7 +4,6 @@ import asyncio
 import re
 from typing import Any
 
-import pytest
 
 from reader.decide import decide, deciding_from, parse_assessments, parse_scope, verdict_from
 from reader.extract import extract_requirements, parse_items

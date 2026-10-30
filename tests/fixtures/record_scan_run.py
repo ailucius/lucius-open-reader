@@ -12,7 +12,6 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-import os
 import sys
 from datetime import UTC, datetime
 from pathlib import Path

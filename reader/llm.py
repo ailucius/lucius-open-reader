@@ -42,7 +42,8 @@ class LLMClient(Protocol):
         schema: dict[str, Any],
         effort: str | None = None,
         temperature: float | None = None,
-    ) -> dict[str, Any]: ...
+    ) -> dict[str, Any]:
+        """One chat call whose reply must be a JSON object matching `schema`."""
 
     async def chat_image(
         self,
@@ -53,7 +54,8 @@ class LLMClient(Protocol):
         image: bytes,
         mime: str,
         effort: str | None = None,
-    ) -> str: ...
+    ) -> str:
+        """One chat call with a page image; the reply is plain text."""
 
 
 # A page transcription is a page of text: a few thousand tokens at most. A reply that runs to this
